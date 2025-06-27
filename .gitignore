@@ -1,1 +1,6 @@
-config/.env
+.venv
+src/usedcaranalytics/__pycache__
+src/usedcaranalytics/config/.env
+src/usedcaranalytics/config/__pycache__
+data/raw/sample_comments.parquet
+data/raw/sample_submissions.parquet
