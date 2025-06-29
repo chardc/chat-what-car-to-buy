@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "usedcaranalytics"
+version = "0.1.0"
+description = "Reddit Used Car Analytics"
+authors = [
+    { name = "Richard Canlas" }
+]
+dependencies = [
+    "python-dotenv",
+    "pyarrow",
+    "pandas",
+    "praw",
+    "prawcore",
+    "numpy",          
+    "tqdm",           
+    "requests"        
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+Homepage = "https://github.com/chardc/UsedCarAnalytics"
+LinkedIn = "https://www.linkedin.com/in/richard-canlas-cpa-99a94b153/"

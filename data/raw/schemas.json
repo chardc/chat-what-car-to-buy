@@ -6,7 +6,6 @@
     "score": "pa.int64()",
     "upvote_ratio": "pa.float64()",
     "timestamp": "pa.timestamp('s')",
-    "date": "pa.date32()",
     "subreddit": "pa.string()",
     "num_comments": "pa.int64()"
   },
@@ -15,7 +14,6 @@
     "body": "pa.string()",
     "score": "pa.int64()",
     "timestamp": "pa.timestamp('s')",
-    "date": "pa.date32()",
     "subreddit": "pa.string()",
     "parent_submission_id": "pa.string()"
   }
