@@ -1,6 +1,11 @@
+# Virtual environment
 .venv
-src/usedcaranalytics/__pycache__
+
+# All __pycache__ files
+**/__pycache__
+
+# Editable module installation for local dev
+src/usedcaranalytics.egg-info
+
+# .env file containing sensitive API login credentials
 src/usedcaranalytics/config/.env
-src/usedcaranalytics/config/__pycache__
-data/raw/sample_comments.parquet
-data/raw/sample_submissions.parquet
