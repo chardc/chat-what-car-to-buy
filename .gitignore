@@ -4,8 +4,12 @@
 # All __pycache__ files
 **/__pycache__
 
+# All scratch / sandbox notebooks
+**/*scratch.ipynb
+**/*sandbox.ipynb
+
 # Editable module installation for local dev
-src/usedcaranalytics.egg-info
+**/usedcaranalytics.egg-info
 
 # .env file containing sensitive API login credentials
-src/usedcaranalytics/config/.env
+**/.env
