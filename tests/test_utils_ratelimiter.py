@@ -1,11 +1,13 @@
+from prawcore import OAuthException
 from usedcaranalytics.utils.ratelimiter import RateLimiter, backoff_on_rate_limit
 from unittest.mock import MagicMock, patch
 from collections import deque
 import pytest
 
-# Define sentinel class to avoid infinite recursion for test_evaluate_sleep
 class LimitsDict(dict):
+    """Sentinel class to avoid infinite recursion for test_evaluate_sleep()."""
     REMAINING_VALS = [5, 1000]
+    
     def get_remaining(self):
         return self.REMAINING_VALS.pop(0) if self.REMAINING_VALS else 1000
         
@@ -21,15 +23,25 @@ def mock_reddit():
     reddit.auth.limits = {'remaining': None, 'reset_timestamp': None, 'used': None}
     return reddit
 
+def invalid_oauth(self):
+    """Stub for Reddit.user.me() method. Always raises OAuthException."""
+    raise OAuthException
+
 def test_initialization(mock_reddit):
-    """
-    Tests constructor to check whether instance attributes are initialized properly.
-    """
+    """Tests constructor to check whether instance attributes are initialized properly."""
     rate_limiter = RateLimiter(mock_reddit, buffer_range=[0,1])
     assert rate_limiter.buffer_range == [0,1]
     assert rate_limiter.total_requests == 0
     assert isinstance(rate_limiter.requests_in_window, deque)
 
+def test_invalid_initialization(mock_reddit):
+    """Tests if error was raised when reddit object with invalid keys passed to constructor."""
+    with pytest.raises(Exception):
+        reddit = mock_reddit
+        reddit.user.me = invalid_oauth
+        reddit.read_only = False
+        rate_limiter = RateLimiter(reddit)
+    
 def test_evaluate_deque_implem(mock_reddit, monkeypatch):
     """
     Tests sliding window counter implementation as fallback when reddit.auth.limits

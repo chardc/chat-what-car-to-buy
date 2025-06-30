@@ -1,7 +1,7 @@
 import datetime as dt, time, random, functools
 from collections import deque
 from typing import Tuple, List, Union
-from prawcore.exceptions import ResponseException
+from prawcore.exceptions import ResponseException, OAuthException
 from praw import Reddit
 
 # RateLimiter class implementation for counting requests in 10-minute sliding window and
@@ -15,10 +15,7 @@ class RateLimiter:
     MAX_REQUESTS = 1000
     PERIOD = 600.0
     
-    def __init__(
-        self, 
-        reddit: Reddit, 
-        buffer_range: Union[Tuple[int, int], List[int]]=(50, 100)):
+    def __init__(self, reddit: Reddit, buffer_range: Union[Tuple[int, int], List[int]]=(50, 100)):
         """
         Args:
             - reddit: PRAW Reddit object.
@@ -26,11 +23,29 @@ class RateLimiter:
         Returns:
             - RateLimiter object.
         """
-        self.reddit = reddit
+        self._authenticate_reddit(reddit)
         self.buffer_range = buffer_range
         self.total_requests = 0
         self.requests_in_window = deque()
-        
+    
+    def _authenticate_reddit(self, reddit: Reddit):
+        """Checks if reddit object passed to constructor contains valid credentials."""
+        if reddit.read_only:
+            self.reddit = reddit
+            # Create instance attribute denoting new MAX_REQUESTS: 10 requests/min
+            self.MAX_REQUESTS = 100
+            print('Access is in read-only mode. Limiting requests to 10 calls/min.')
+            return self
+        # Otherwise, check if OAuth passes
+        try:
+            reddit.user.me()
+        except OAuthException as e:
+            print(e)
+            raise Exception('Cannot construct RateLimiter with invalid Reddit object due to invalid API keys.')
+        else:
+            self.reddit = reddit
+            return self 
+    
     def evaluate(self):
         """Checks if current request can be accommodated based on current limits."""        
         remaining_requests = self.reddit.auth.limits['remaining']
