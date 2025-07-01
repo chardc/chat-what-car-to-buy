@@ -1,6 +1,6 @@
 import pytest
 from usedcaranalytics.config.parquet import _load_schema, get_submission_schema, \
-    get_comment_schema, get_parquet_configs, get_repo_root
+    get_comment_schema, get_parquet_configs
 from unittest.mock import mock_open, patch, MagicMock
 from pathlib import Path
 from pyarrow import string as pa_string, field as pa_field
@@ -140,26 +140,5 @@ def test_invalid_dataset_dirs():
         get_parquet_configs(dataset_dirs=(1,2,3,4))
     with pytest.raises(ValueError):
         get_parquet_configs(dataset_dirs=('a',))
-        
-def mock_path_exists(self):
-    """Patch for Path.exists() to mock when function reaches repo root folder."""
-    sentinels = ('.git', 'pyproject.toml', 'setup.py', 'README.md')
-    if str(self) in [f'/root/{s}' for s in sentinels]:
-        return True
-    return False
-
-def test_get_repo_root(monkeypatch):
-    """Test implementation when valid args passed."""
-    # Patch the mock_path_exists to Path.exists()
-    start_path = Path('/root/subdir/test/test.py')
-    monkeypatch.setattr(Path, 'exists', mock_path_exists)
-    root = get_repo_root(start_path)
-    assert root == Path('/root')
-    
-def test_no_root_raised():
-    """Test if runtime error raised when no repo root found."""
-    with pytest.raises(RuntimeError):
-        # Fake path; naturally, no sentinel will be found
-        get_repo_root('/root/subdir/test/test.py')
     
     
