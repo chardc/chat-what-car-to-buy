@@ -1,31 +1,60 @@
 import json
 import datetime as dt
 import pyarrow as pa, pyarrow.parquet as pq
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 from typing import Tuple, NamedTuple, Union, Optional, Dict, List
 from usedcaranalytics.pipeline.transformer import DataTransformer
 
 class ParquetDataLoader:
     def __init__(
-        self, config: Tuple[NamedTuple], target_MB: Union[int, float]=128.0, 
-        transformer: Optional[DataTransformer]=None
+        self, config: Union[List[NamedTuple], Tuple[NamedTuple]], 
+        target_MB: Union[int, float]=128.0, transformer: Optional[Union[DataTransformer, Callable]]=None
         ):
         """
         Args:
-            - config: Tuple of namedtuples containing configuration data for submission
+            - config: List/Tuple of namedtuples containing configuration data for submission
             and record datasets, respectively. Must contain record_type, dataset_path, 
             and PyArrow schema.
             - target_MB: Int or float value of target buffer size before *.parquet 
             conversion.
-            - transformer: Optional DataTransformer object to clean and preprocess
-            data before writing to disk as *.parquet file.
+            - transformer: Optional DataTransformer object to clean and preprocess a PyArrow
+            table before writing to disk as *.parquet file. Must have either .transform method
+            or implement __call__.
         Returns:
             - ParquetDataLoader object.
         """
+        self._validate_init_args(config, target_MB, transformer)
         self.config = config
         self._transformer = transformer
         self.set_target_mb(target_MB)
-        self._configure_loader()
+        self._configure_loader() # Configure loader will catch invalid namedtuples and throw AttributeError
+    
+    def _validate_init_args(self, config, target_MB, transformer):
+        """Abstraction of constructor argument validation checks."""
+        # If list/tuple but != 2 elements, or if not list/tuple
+        if (isinstance(config, (list, tuple)) and len(config) != 2) or not isinstance(config, (tuple, list)):
+            raise ValueError(
+                'Constructor expects a tuple or list of namedtuples containing\n'
+                'record type ("submission", "comment"), dataset path, and PyArrow\n'
+                'schema for submission and comment data, respectively.'
+                )
+        # Validate that target_MB is positive non-zero numeric value.
+        if target_MB <= 0:
+            raise ValueError('target_MB must be a positive non-zero int/float. Default = 32 MB.')
+        if not isinstance(target_MB, (float, int)):
+            raise TypeError(
+                'Cannot assign non-numeric value to target_MB. Call constructor with\n'
+                'a positive non-zero int/float.'
+                )
+        # Transformer must have at least a .transform() method or must be a 
+        # callable (i.e. implements __call__()) that takes a PyArrow as input
+        if transformer:
+            has_transform = lambda obj: getattr(obj, 'transform', False)
+            if not (callable(transformer) or has_transform(transformer)):
+                raise ValueError(
+                    'Transformer has no .transform method. Transformer can either be an object\n'
+                    'implementing .transform or a Callable.'
+                    )
     
     def _configure_loader(self):
         """Abstracts away the configuration of schemas, buffers, root paths, byte counters."""
@@ -55,7 +84,7 @@ class ParquetDataLoader:
             - Self
         """
         self.target_MB = target_MB
-        self._target_bytes = int(target_MB * 2 ** 20)
+        self._target_bytes = int(target_MB * 2**20)
         return self
     
     def load(self, data_stream:Generator):
@@ -121,9 +150,11 @@ class ParquetDataLoader:
         fpath = self._dataset_paths[record_type] / fname
         # Convert current buffer to Pyarrow Table and write Parquet files to target directory
         pa_table = pa.Table.from_pydict(buffer, schema=schema)
-        # Transform batched data before writing if applicable
-        if self._transformer:
+        # Transform batched data before writing if applicable; either via .transform() or __call__()
+        if self._transformer and 'transform' in dir(self._transformer):
             pa_table = self._transformer.transform(pa_table)
+        elif self._transformer:
+            pa_table = self._transformer(pa_table)
         # Write to disk via GZIP for higher compression at the cost of write time, ideal
         # for long term static storage
         pq.write_table(pa_table, where=fpath, compression='GZIP')
