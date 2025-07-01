@@ -1,8 +1,9 @@
+import json
+import pyarrow as pa
 from pathlib import Path
 from collections import namedtuple
 from typing import Optional, Union, Tuple, List
-import pyarrow as pa
-import json
+from usedcaranalytics.utils.getpath import get_path
 
 ## Initialize namedtuple for Parquet Config for ease of access and immutability
 ParquetConfig = namedtuple('ParquetConfig',['record_type','dataset_path','schema'])
@@ -103,7 +104,7 @@ def get_parquet_configs(
     
     # Default root/subdir path: UsedCarAnalytics/data/processed
     if root is None:
-        root = get_repo_root()
+        root = get_path() # get_repo_root()
     elif isinstance(root, str):
         root = Path(root)
     
@@ -138,20 +139,21 @@ def get_parquet_configs(
             )
         )
 
-def get_repo_root(
-    start_path: Union[str, Path]=None, 
-    sentinels: Tuple[str]=('.git','pyproject.toml','setup.py','README.md')
-    ):
-    """Finds the project root by walking up each parent directory until sentinel is found."""
-    if start_path is None:
-        start_path = Path(__file__)
-    elif isinstance(start_path, str):
-        start_path = Path(start_path)
-    # Get absolute path of current file
-    current_path = start_path.resolve()
-    # Iterate through all parents until marker is found
-    for parent in [current_path, *current_path.parents]:
-        # Return parent path if any of the sentinels is matched
-        if any((parent / sentinel).exists() for sentinel in sentinels):
-            return parent
-    raise RuntimeError('Project root not found. Try specifying a different sentinel (marker).')
+# # Refactored to usedcaranalytics.utils.getpath.get_path 
+# def get_repo_root(
+#     start_path: Union[str, Path]=None, 
+#     sentinels: Tuple[str]=('.git','pyproject.toml','setup.py','README.md')
+#     ):
+#     """Finds the project root by walking up each parent directory until sentinel is found."""
+#     if start_path is None:
+#         start_path = Path(__file__)
+#     elif isinstance(start_path, str):
+#         start_path = Path(start_path)
+#     # Get absolute path of current file
+#     current_path = start_path.resolve()
+#     # Iterate through all parents until marker is found
+#     for parent in [current_path, *current_path.parents]:
+#         # Return parent path if any of the sentinels is matched
+#         if any((parent / sentinel).exists() for sentinel in sentinels):
+#             return parent
+#     raise RuntimeError('Project root not found. Try specifying a different sentinel (marker).')
