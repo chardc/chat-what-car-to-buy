@@ -26,11 +26,11 @@ class DataStreamer:
         Args:
             - subreddit: Praw Subreddit object.
         Returns:
-            - Generator of Submission objects.
+            - Iterator of Submission objects.
         """
         # Evaluate if current request can be accommodated with remaining limits
         self.rate_limiter.evaluate()
-        return subreddit.search(**kwargs, query=query)
+        return subreddit.search(**kwargs, query=query) # subreddit.search is an iterator
 
     @backoff_on_rate_limit(max_retries=5)
     def _fetch_comments(self, submission: Submission, **kwargs):
@@ -41,13 +41,13 @@ class DataStreamer:
         Args:
             - submission: Praw Submission object.
         Returns:
-            - Generator of Comment objects.
+            - Generator of Comment objects from a list of comments.
         """
         # Evaluate if current request can be accommodated with remaining limits
         self.rate_limiter.evaluate()
         # Replace 'more comments' with specified limit (default = 0 or retain top-level comments only)
         submission.comments.replace_more(**kwargs)
-        yield from submission.comments
+        yield from submission.comments # submission.comments is a list
     
     def _stream_comments(self, submission: Submission, **kwargs):
         """
@@ -63,14 +63,14 @@ class DataStreamer:
         # Update comments dict with info dict 
         for comment in comments:            
             # Stream comment data when slot available in current window
-            yield "comment", {
+            yield ('comment', {
                 'comment_id':comment.id,
                 'body':comment.body,
                 'score':comment.score,
                 'timestamp':int(comment.created_utc),
                 'subreddit':comment.subreddit_name_prefixed,
                 'parent_submission_id':submission.id
-                }
+                })
     
     def stream_search_results(
         self, subreddit_name: str, query:str, limit: int=50, 
@@ -89,24 +89,20 @@ class DataStreamer:
             - Generator for submission data and comment data in dictionary format.
         """
         subreddit = self.reddit.subreddit(subreddit_name)
-        
-        # Iterator
         submissions = self._fetch_submissions(
             **search_kwargs, subreddit=subreddit, query=query, limit=limit
             )
-        
         if progress_bar:
             submissions = tqdm(
                 submissions, total=limit, position=1, colour='red', 
                 desc=f"fetching submissions...", unit='posts', leave=False
             )
-        
         # Fetch submissions, and for every submission, fetch the comments
         for submission in submissions:
             # Stream comment data from current submission ("submission", Dict[str, Any])
             yield from self._stream_comments(submission, limit=0)
             # Stream submission data when slot available in current window
-            yield "submission", {
+            yield ('submission', {
                 'submission_id':submission.id,
                 'title':submission.title,
                 'selftext':submission.selftext,
@@ -115,15 +111,15 @@ class DataStreamer:
                 'timestamp':int(submission.created_utc),
                 'subreddit':submission.subreddit_name_prefixed,
                 'num_comments':submission.num_comments
-                }
+                })
             
     def stream(
         self, subreddits:List[str], queries:List[str], progress_bar:bool=None, 
         **search_kwargs
         ):
         """
-        Wrapper for streaming functions. Takes a list of subreddits and queries, then calls the 
-        stream_search_results method for each combination of subreddit and query. 
+        Wrapper for streaming functions. Takes a list of subreddits and queries, 
+        then calls stream_search_results() for each combination of subreddit and query. 
         Args:
             - subreddits: List of subreddit names.
             - queries: List of search queries or keywords:
@@ -131,21 +127,17 @@ class DataStreamer:
         Returns:
             - Generator of submission data and comment data.
         """
-        # Generator of combinations
         search_pairs = product(subreddits, queries)
-        
-        # List
         if progress_bar:
-            search_pairs = list(search_pairs)
+            search_pairs = list(search_pairs) # Generator -> list
             search_pairs = tqdm(
-                search_pairs, total=len(search_pairs), 
-                desc=f'streaming subreddit search results...',
-                unit='queries', colour='orange'
+                search_pairs, total=len(search_pairs), unit='queries',
+                desc=f'streaming subreddit search results...', colour='orange'
                 )
-        
         # Parse submission and comment data with jittered API calls
         for subreddit, query in search_pairs:    
             # Stream submission and comment records (str(record_type), Dict[str(col_name), Any])
             yield from self.stream_search_results(
-                **search_kwargs, subreddit_name=subreddit, query=query, progress_bar=progress_bar
+                **search_kwargs, subreddit_name=subreddit, 
+                query=query, progress_bar=progress_bar
                 )
