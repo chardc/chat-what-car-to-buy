@@ -22,9 +22,7 @@ class DataTransformer():
             # Duplicates mainly come from duplicated submissions when searching
             out_table = self.remove_duplicates(table) 
             # Filter out [removed] and [deleted] text
-            out_table = self.remove_matching_text( 
-                out_table, regex_patterns=(r"\[deleted\]",r"\[removed\]")
-                ) 
+            out_table = self.remove_matching_text(out_table) 
             # Clean the text data and convert to lowercase
             out_table = self.remove_newlines_nonascii_lowercase(out_table)
             # Remove extremely short text data
@@ -70,7 +68,7 @@ class DataTransformer():
     
     @staticmethod
     def remove_matching_text(
-        table: pa.Table, regex_patterns: Union[Tuple[str], List[str]], 
+        table: pa.Table, regex_patterns: Union[Tuple[str], List[str]]=(r"\[deleted\]",r"\[removed\]"), 
         match_logic: Literal['union', 'intersect']='union'
         ):
         """
