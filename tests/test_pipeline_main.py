@@ -96,8 +96,8 @@ def generate_submissions(sub_df, com_df):
 
 # 1049 comments (935 unique) and 35 submissions (33 unique)
 TEST_DIR = Path(__file__).parent
-COMMENT_DF = pd.read_parquet(TEST_DIR / 'sample-comments.parquet')
-SUBMISSION_DF = pd.read_parquet(TEST_DIR / 'sample-submissions.parquet')
+COMMENT_DF = pd.read_parquet(TEST_DIR / 'test-data/sample-comments.parquet')
+SUBMISSION_DF = pd.read_parquet(TEST_DIR / 'test-data/sample-submissions.parquet')
 # Remove duplicates to ensure only unique is counted at the end
 COMMENT_DF = COMMENT_DF.drop_duplicates(['comment_id'])
 SUBMISSION_DF = SUBMISSION_DF.drop_duplicates(['submission_id'])
