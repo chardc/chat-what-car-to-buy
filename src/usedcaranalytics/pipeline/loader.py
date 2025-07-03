@@ -6,7 +6,7 @@ from collections.abc import Generator, Callable
 from typing import Tuple, NamedTuple, Union, Optional, Dict, List
 from usedcaranalytics.pipeline.transformer import DataTransformer
 
-logger = logging.getLogger
+logger = logging.getLogger(__name__)
 
 class ParquetDataLoader:
     def __init__(

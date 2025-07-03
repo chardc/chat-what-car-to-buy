@@ -18,14 +18,16 @@ def mock_get_parquet_configs():
     com_cfg = ParquetConfig('comment', '/root/data/processed/comment-dataset', comment_schema)
     return (sub_cfg, com_cfg)
 
-def test_initialization(mock_get_parquet_configs):
+@patch('usedcaranalytics.pipeline.loader.logger')
+def test_initialization(mock_logger, mock_get_parquet_configs):
     """Test ParquetDataLoader constructor."""
     def simple_transform(table): return table
     fake_loader = ParquetDataLoader(mock_get_parquet_configs, transformer=simple_transform)
     assert fake_loader.config == mock_get_parquet_configs
     assert callable(fake_loader._transformer)
 
-def test_init_invalid_config(mock_get_parquet_configs):
+@patch('usedcaranalytics.pipeline.loader.logger')
+def test_init_invalid_config(mock_logger, mock_get_parquet_configs):
     """Test exceptions raised for invalid config"""
     sub_cfg, _ = mock_get_parquet_configs
     # Single namedtuple instead of two
@@ -44,7 +46,8 @@ def test_init_invalid_config(mock_get_parquet_configs):
     with pytest.raises(TypeError):
         ParquetDataLoader(mock_get_parquet_configs, target_MB='invalid') 
 
-def test_configure_loader(mock_get_parquet_configs):
+@patch('usedcaranalytics.pipeline.loader.logger')
+def test_configure_loader(mock_logger, mock_get_parquet_configs):
     """Test if named values from config tuple are loaded as instance vars."""
     loader = ParquetDataLoader(mock_get_parquet_configs)
     assert loader._schemas == {
@@ -62,7 +65,8 @@ def test_configure_loader(mock_get_parquet_configs):
     assert loader._buffer_sizes == {'submission': 0, 'comment': 0}
     assert loader._batch_counters == {'submission': 0, 'comment': 0}
 
-def test_set_target_mb(mock_get_parquet_configs):
+@patch('usedcaranalytics.pipeline.loader.logger')
+def test_set_target_mb(mock_logger, mock_get_parquet_configs):
     """Test if target_MB setter works and if the _target_bytes is automatically set."""
     # Check if it works on initialization
     fake_loader = ParquetDataLoader(mock_get_parquet_configs, target_MB=16)
@@ -72,9 +76,10 @@ def test_set_target_mb(mock_get_parquet_configs):
     assert fake_loader.target_MB == 32.5
     assert fake_loader._target_bytes == int(32.5 * 2**20)
 
+@patch('usedcaranalytics.pipeline.loader.logger')
 @patch('usedcaranalytics.pipeline.loader.ParquetDataLoader._flush')
 @patch('usedcaranalytics.pipeline.loader.ParquetDataLoader._write')
-def test_load(stubbed_flush, stubbed_write , mock_get_parquet_configs):
+def test_load(stubbed_flush, stubbed_write, mock_logging, mock_get_parquet_configs):
     """Test loading logic with mocked data_stream."""
     # When called, return a flushed buffer and byte count
     stubbed_write.side_effect = lambda buffer: ({k: [] for k in buffer}, 0)
@@ -94,21 +99,23 @@ def test_load(stubbed_flush, stubbed_write , mock_get_parquet_configs):
     assert loader._flush.call_count == 7
 
 # Pytest tmp_path fixture creates a temp directory to simulate disk write
-def test_write(tmp_path, mock_get_parquet_configs):
+@patch('usedcaranalytics.pipeline.loader.logger')
+def test_write(mock_logging, tmp_path, mock_get_parquet_configs):
     """Test _write method with temporary path."""
     loader = ParquetDataLoader(mock_get_parquet_configs)
     loader._dataset_paths['submission'] = tmp_path
     buffer = {'submission_id': ['sid1'], 'title': ['t1']}
     loader._write('submission', buffer)
     # Should write exactly one file to temp directory
-    exported_files = list(tmp_path.glob('SUBMISSION-*.parquet'))
+    exported_files = list(tmp_path.glob('submission-*.parquet'))
     assert len(exported_files) == 1
     # Read parquet table and ensure written data match buffer
     read_table = pa.parquet.read_table(exported_files[0])
     assert read_table.column('submission_id').to_pylist() == ['sid1']
     assert read_table.column('title').to_pylist() == ['t1']
 
-def test_flush():
+@patch('usedcaranalytics.pipeline.loader.logger')
+def test_flush(mock_logging):
     """Test buffer flushing method."""
     # Create a buffer and ensure it returns a tuple (dict of empty lists, 0)
     buffer = {'col1': [1, 2], 'col2': ['a', 'b']}
