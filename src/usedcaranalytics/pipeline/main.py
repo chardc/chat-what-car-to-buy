@@ -8,6 +8,7 @@ from usedcaranalytics.pipeline.loader import ParquetDataLoader
 from usedcaranalytics.config.parquet import get_parquet_configs
 from usedcaranalytics.utils.txtparser import txt_to_list
 from usedcaranalytics.utils.loadenv import load_env
+from usedcaranalytics.utils.getpath import get_path
 
 def main():
     """
@@ -19,7 +20,14 @@ def main():
     """
     # Run config scripts; generate loader config 
     PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD = load_env()
-    loader_config = get_parquet_configs()
+    
+    # Try getting schema from schemas.json in config dir, otherwise, return default.
+    try:
+        loader_config = get_parquet_configs(
+            schema_path=get_path(__file__, target='schemas.json')
+            )
+    except:
+        loader_config = get_parquet_configs()
     
     # Initialize reddit using API Keys and Reddit login credentials
     reddit = Reddit(
