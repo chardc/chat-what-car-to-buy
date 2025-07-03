@@ -158,7 +158,9 @@ def fake_transform(table):
                      )
     return out_table
 
-
+@patch('usedcaranalytics.pipeline.streamer.logger')
+@patch('usedcaranalytics.pipeline.transformer.logger')
+@patch('usedcaranalytics.pipeline.loader.logger')
 @patch('usedcaranalytics.pipeline.main.DataTransformer')
 @patch('usedcaranalytics.pipeline.main.txt_to_list')
 @patch('usedcaranalytics.pipeline.streamer.RateLimiter')
@@ -168,7 +170,8 @@ def fake_transform(table):
 def test_main(
     mock_reddit, stub_load_env, stub_parquet_cfg, 
     fake_ratelimiter, stub_txt_to_list, 
-    mock_transformer, tmp_path_factory
+    mock_transformer, mock_logging_loader, mock_logging_transformer,
+    mock_logging_streamer, tmp_path_factory
     ):
     """Integration test for the ETL pipeline script."""
     # Patch dependencies
@@ -193,10 +196,9 @@ def test_main(
     ## then queries on second call. Total = 4 search pairs.
     stub_text_parser = StubTextParser()
     stub_txt_to_list.return_value = stub_text_parser()
-    ## Patch Transformer.transform to only remove [removed] or [deleted] text
-    mock_transformer.return_value.transform.side_effect = (
-        lambda table: fake_transform(table)
-        )
+    ## Patch Transformer.transform and instance __call__ to only remove [removed] or [deleted] text
+    mock_transformer.return_value.transform.side_effect = lambda table: fake_transform(table)
+    mock_transformer.return_value.side_effect = lambda table: fake_transform(table)
     
     # Run main script
     main()

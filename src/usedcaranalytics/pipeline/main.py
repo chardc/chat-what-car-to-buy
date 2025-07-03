@@ -5,7 +5,8 @@ from praw import Reddit
 from usedcaranalytics.pipeline.streamer import DataStreamer
 from usedcaranalytics.pipeline.transformer import DataTransformer
 from usedcaranalytics.pipeline.loader import ParquetDataLoader
-from usedcaranalytics.config.parquet import get_parquet_configs
+from usedcaranalytics.config.parquet_config import get_parquet_configs
+from usedcaranalytics.config.logging_config import setup_logging
 from usedcaranalytics.utils.txtparser import txt_to_list
 from usedcaranalytics.utils.loadenv import load_env
 from usedcaranalytics.utils.getpath import get_path
@@ -18,6 +19,9 @@ def main():
     Load step stores the streamed data into buffers, and batch exports data as *.parquet
     whenever buffer size threshold reached.
     """
+    # Setup logger, default=logging.DEBUG
+    setup_logging()
+    
     # Run config scripts; generate loader config 
     PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD = load_env()
     
@@ -41,14 +45,14 @@ def main():
     # Initialize the ETL objects
     streamer = DataStreamer(reddit)
     transformer = DataTransformer()
-    loader = ParquetDataLoader(loader_config, target_MB=256, transformer=transformer)
+    loader = ParquetDataLoader(loader_config, target_MB=8, transformer=transformer) # Smaller target MB for frequent writes
     
     # Get the list of subreddits and queries
     subreddits = txt_to_list(target_file='subreddits.txt', subdir='data/raw')
     queries = txt_to_list(target_file='search_queries.txt', subdir='data/raw')
     
     # Assign generator to variable
-    # Expected 10x10x50 == 5000 submissions, and < 3x comments 
+    # Yield: Submissions <= 10*10*50==5000; Comments >= ~5*Submissions 
     stream = streamer.stream(subreddits, queries, progress_bar=True, limit=50)
     
     # ETL to disk as *.parquet
