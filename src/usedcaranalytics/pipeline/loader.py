@@ -123,7 +123,7 @@ class ParquetDataLoader:
         # Final write for remaining data in both buffers after streaming data
         # Only write if there are remaining records to avoid null records in Parquet file
         for record_type, buffer in self._buffers.items():
-            if all(container for container in buffer.values()):
+            if any(container for container in buffer.values()):
                 self._write(record_type, buffer)
                 buffer, self._buffer_sizes[record_type] = self._flush(buffer)
                 
@@ -148,6 +148,8 @@ class ParquetDataLoader:
             )
         # Absolute path; parquet.py config returns absolute paths as PosixPath
         fpath = self._dataset_paths[record_type] / fname
+        # Ensure that the parent directories exist
+        fpath.parent.mkdir(parents=True, exist_ok=True)
         # Convert current buffer to Pyarrow Table and write Parquet files to target directory
         pa_table = pa.Table.from_pydict(buffer, schema=schema)
         # Transform batched data before writing if applicable; either via .transform() or __call__()
