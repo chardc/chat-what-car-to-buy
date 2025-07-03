@@ -4,6 +4,9 @@
 # All __pycache__ files
 **/__pycache__
 
+# All logs
+**/*.log
+
 # All scratch / sandbox notebooks
 **/*scratch.ipynb
 **/*sandbox.ipynb
