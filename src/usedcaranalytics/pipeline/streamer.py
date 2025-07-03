@@ -1,9 +1,12 @@
+import logging
 from praw import Reddit
 from praw.models import Subreddit, Submission
 from tqdm.auto import tqdm
 from typing import List
 from itertools import product
 from usedcaranalytics.utils.ratelimiter import RateLimiter, backoff_on_rate_limit
+
+logger = logging.getLogger(__name__)
 
 class DataStreamer:
     def __init__(self, reddit: Reddit):
@@ -13,6 +16,7 @@ class DataStreamer:
         Returns:
             - DataStreamer object.
         """
+        logger.info('Initializing DataStreamer with Reddit instance')
         # If invalid reddit passed to constructor, RateLimiter will catch and raise Exception
         self.reddit = reddit
         self.rate_limiter = RateLimiter(reddit)
@@ -59,6 +63,7 @@ class DataStreamer:
         Returns: 
             - Generator for comment data in dictionary format.
         """
+        logger.debug('Streaming comments for submission id: %s', submission.id)
         comments = self._fetch_comments(submission, **kwargs)
         # Update comments dict with info dict 
         for comment in comments:            
@@ -88,6 +93,7 @@ class DataStreamer:
         Returns:
             - Generator for submission data and comment data in dictionary format.
         """
+        logger.info('Starting search in subreddit: %s with query: %s and limit: %d', subreddit_name, query, limit)
         subreddit = self.reddit.subreddit(subreddit_name)
         submissions = self._fetch_submissions(
             **search_kwargs, subreddit=subreddit, query=query, limit=limit
@@ -99,6 +105,7 @@ class DataStreamer:
             )
         # Fetch submissions, and for every submission, fetch the comments
         for submission in submissions:
+            logger.debug('Streaming comments and submission for submission id: %s', submission.id)
             # Stream comment data from current submission ("submission", Dict[str, Any])
             yield from self._stream_comments(submission, limit=0)
             # Stream submission data when slot available in current window
@@ -112,6 +119,7 @@ class DataStreamer:
                 'subreddit':submission.subreddit_name_prefixed,
                 'num_comments':submission.num_comments
                 })
+        logger.info('Finished search in subreddit: %s with query: %s and limit: %d', subreddit_name, query, limit)
             
     def stream(
         self, subreddits:List[str], queries:List[str], progress_bar:bool=None, 
@@ -127,8 +135,10 @@ class DataStreamer:
         Returns:
             - Generator of submission data and comment data.
         """
+        logger.info('Starting stream for subreddits: %s and queries: %s', subreddits, queries)
         search_pairs = product(subreddits, queries)
         if progress_bar:
+            logger.debug('Progress bar enabled for streaming data from search pairs.')
             search_pairs = list(search_pairs) # Generator -> list
             search_pairs = tqdm(
                 search_pairs, total=len(search_pairs), unit='queries',
@@ -136,8 +146,10 @@ class DataStreamer:
                 )
         # Parse submission and comment data with jittered API calls
         for subreddit, query in search_pairs:    
+            logger.debug('Streaming results for subreddit: %s, query: %s', subreddit, query)
             # Stream submission and comment records (str(record_type), Dict[str(col_name), Any])
             yield from self.stream_search_results(
                 **search_kwargs, subreddit_name=subreddit, 
                 query=query, progress_bar=progress_bar
                 )
+        logger.info('Finished streaming results for subreddits: %s and queries: %s', subreddits, queries)
