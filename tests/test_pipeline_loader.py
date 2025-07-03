@@ -1,7 +1,7 @@
 import pytest
 import pyarrow as pa
 from usedcaranalytics.pipeline.loader import ParquetDataLoader
-from usedcaranalytics.config.parquet import ParquetConfig
+from usedcaranalytics.config.parquet_config import ParquetConfig
 from unittest.mock import patch
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 import pytest
-from usedcaranalytics.config.parquet import _load_schema, get_submission_schema, \
+from usedcaranalytics.config.parquet_config import _load_schema, get_submission_schema, \
     get_comment_schema, get_parquet_configs
 from unittest.mock import mock_open, patch, MagicMock
 from pathlib import Path
