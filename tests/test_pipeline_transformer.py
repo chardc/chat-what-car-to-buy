@@ -66,7 +66,8 @@ TRANSFORMER = DataTransformer()
 
 def test_remove_short_text_submissions(mock_submission_table):
     """Tests filtering short text from submissions."""
-    results = TRANSFORMER.remove_short_text(mock_submission_table)
+    TRANSFORMER.current_record_type = 'submission'
+    results = TRANSFORMER.remove_short_text_from_table(mock_submission_table)
     # Row 1 (short title) and Row 3 (short selftext) removed
     assert results.num_rows == 1
     # Only row 2 should remain
@@ -74,7 +75,8 @@ def test_remove_short_text_submissions(mock_submission_table):
 
 def test_remove_short_text_comments(mock_comment_table):
     """Tests filtering short text from comments."""
-    results = TRANSFORMER.remove_short_text(mock_comment_table)
+    TRANSFORMER.current_record_type = 'comment'
+    results = TRANSFORMER.remove_short_text_from_table(mock_comment_table)
     # Row 1 and row 2 removed
     assert results.num_rows == 1
     # Only row 3 should remain
@@ -83,36 +85,40 @@ def test_remove_short_text_comments(mock_comment_table):
 def test_remove_custom_submission_length(mock_submission_table):
     """Tests filtering of comments if custom minimum title and selftext length was passed."""
     # Should remove all since excessive minimum character length
-    results_long_ttl = TRANSFORMER.remove_short_text(mock_submission_table, 
+    TRANSFORMER.current_record_type = 'submission'
+    results_long_ttl = TRANSFORMER.remove_short_text_from_table(mock_submission_table, 
                                                      min_title_length=50)
     assert results_long_ttl.num_rows == 0
     # Should retain rows 2 and 3 since they pass selftext length, 
     # but row 1 fails title length check
-    results_short_stxt = TRANSFORMER.remove_short_text(mock_submission_table, 
+    results_short_stxt = TRANSFORMER.remove_short_text_from_table(mock_submission_table, 
                                                        min_selftext_length=5)
     assert results_short_stxt.num_rows == 2
 
 def test_remove_custom_comment_length(mock_comment_table):
     """Tests filtering of comments if custom minimum body length was passed."""
     # Should remove all since excessive minimum character length
-    results_long_body = TRANSFORMER.remove_short_text(mock_comment_table, 
+    TRANSFORMER.current_record_type = 'comment'
+    results_long_body = TRANSFORMER.remove_short_text_from_table(mock_comment_table, 
                                                       min_body_length=50)
     assert results_long_body.num_rows == 0
     # Should retain all since no minimum length
-    results_short_body = TRANSFORMER.remove_short_text(mock_comment_table, 
+    results_short_body = TRANSFORMER.remove_short_text_from_table(mock_comment_table, 
                                                        min_body_length=0)
     assert results_short_body.num_rows == 3
 
 def test_remove_matching_submission(mock_submission_table):
     """Tests regex-based filtering on submission texts, primarily [deleted] and [removed]."""
-    results = TRANSFORMER.remove_matching_text(mock_submission_table)
+    TRANSFORMER.current_record_type = 'submission'
+    results = TRANSFORMER.remove_match_from_table(mock_submission_table)
     # Only row 3 is removed since selftext == '[deleted]'
     assert results.num_rows == 2
     assert results.column('submission_id').to_pylist() == ['id1', 'id2']
 
 def test_remove_matching_comment(mock_comment_table):
     """Tests regex-based filtering on comment texts, primarily [deleted] and [removed]."""
-    results = TRANSFORMER.remove_matching_text(mock_comment_table)
+    TRANSFORMER.current_record_type = 'comment'
+    results = TRANSFORMER.remove_match_from_table(mock_comment_table)
     # Only row 2 is removed since body == '[removed]'
     assert results.num_rows == 2
     assert results.column('comment_id').to_pylist() == ['cid1', 'cid3']
