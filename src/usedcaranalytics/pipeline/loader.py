@@ -136,7 +136,6 @@ class ParquetDataLoader:
             # is met, write the record batch to disk and flush the buffer
             for record_type, record in data_stream:
                 buffer = self._buffers[record_type]    
-                logger.debug("Received %s record: %s", record_type, record)
                 
                 for col in buffer:
                     buffer[col].append(record.get(col))

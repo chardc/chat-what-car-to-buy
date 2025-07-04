@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from tracemalloc import start
+import logging
 from dotenv import load_dotenv
 from praw import Reddit
 from usedcaranalytics.pipeline.streamer import DataStreamer
@@ -28,8 +28,8 @@ def main(**stream_kwargs):
     Notes:
         Writes *.parquet files to project_root/data/processed/**-dataset directories.
     """
-    # Setup logger, default=logging.DEBUG
-    setup_logging()
+    # Setup logger
+    setup_logging(level=logging.DEBUG, output_to_file=True)
     
     # Run config scripts; generate loader config 
     PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME = load_env()
