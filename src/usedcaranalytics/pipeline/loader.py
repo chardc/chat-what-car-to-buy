@@ -28,7 +28,7 @@ class ParquetDataLoader:
             ValueError: If input arguments are invalid.
             AttributeError: If a NamedTuple in config is missing required attributes.
         """
-        logger.info("Initializing ParquetDataLoader with config: %s and target_MB: %s", config, target_MB)
+        logger.info('Initializing ParquetDataLoader with config: %s and target_MB: %s', config, target_MB)
         self._validate_init_args(config, target_MB, transformer)
         self.config = config
         self._transformer = transformer
@@ -95,8 +95,8 @@ class ParquetDataLoader:
         # Batch counter for filename
         self._batch_counters = {record_type : 0 for record_type in self._buffers}
         
-        logger.debug("Loader schemas set to: %s", self._schemas)
-        logger.debug("Dataset paths: %s", self._dataset_paths)
+        logger.debug('Loader schemas set to: %s', self._schemas)
+        logger.debug('Dataset paths: %s', self._dataset_paths)
         return self
     
     def set_target_mb(self, target_MB: Union[int, float]):
@@ -130,7 +130,7 @@ class ParquetDataLoader:
             *.parquet files written to specified dataset directories in repo root.
             Default = UsedCarAnalytics/data/processed/**-dataset/**.parquet
         """ 
-        logger.info("Starting to load data from stream...")
+        logger.info('Starting to load data from stream...')
         try:
             # Stream the data, append to buffer, track buffer size, and when target buffer size
             # is met, write the record batch to disk and flush the buffer
@@ -147,33 +147,35 @@ class ParquetDataLoader:
                 
                 # Export parquet files to dataset directory and flush buffers and byte counters            
                 if self._buffer_sizes[record_type] >= self._target_bytes:
-                    logger.info("Target buffer size reached for %s. Writing batch #%d to disk.", record_type, self._batch_counters[record_type])
-                    self._write(record_type)
+                    logger.info('Target buffer size reached for %s. Writing batch #%d to disk.', record_type, self._batch_counters[record_type])
+                    self._write(record_type, buffer)
+                    # Increment batch counter for next batch file name
                     self._batch_counters[record_type] += 1
                     buffer, self._buffer_sizes[record_type] = self._flush(buffer)
-                    logger.debug("Buffer flushed for %s after batch write.", record_type)
+                    logger.debug('Buffer flushed for %s after batch write.', record_type)
         
         except Exception as e:
-            logger.error("Exception encountered during streaming: %s. Attempting to flush buffers to disk.", e, exc_info=True)
+            logger.error('Exception encountered during streaming: %s. Attempting to flush buffers to disk.', e, exc_info=True)
             # When an exception is encountered, write current buffers to disk
             for record_type, buffer in self._buffers.items():
                 if any(container for container in buffer.values()):
                     logger.warning("Flushing %s buffer to disk after error.", record_type)
-                    self._write(record_type, buffer)
+                    self._write(record_type, buffer, prefix='error')
                     buffer, self._buffer_sizes[record_type] = self._flush(buffer)
-            logger.critical("ETL script terminating due to error.")
+            logger.critical('ETL script terminating due to error.')
+            raise RuntimeError(f'Exception {e} encountered.')
         
         else:
-            logger.info("Finished streaming. Flushing any remaining buffers to disk.")
+            logger.info('Finished streaming. Flushing any remaining buffers to disk.')
             # Final write for remaining data in both buffers after streaming data
             # Only write if there are remaining records to avoid null records in Parquet file
             for record_type, buffer in self._buffers.items():
                 if any(container for container in buffer.values()):
                     logger.info("Flushing remaining %s buffer to disk.", record_type)
-                    self._write(record_type, buffer)
+                    self._write(record_type, buffer, prefix='final')
                     buffer, self._buffer_sizes[record_type] = self._flush(buffer)
        
-    def _write(self, record_type: str, buffer: Dict[str, List]):
+    def _write(self, record_type: str, buffer: Dict[str, List], prefix: Optional[str]=None):
         """
         Convert buffer to Pyarrow container, write to Parquet, then flush buffer and 
         byte count.
@@ -181,16 +183,22 @@ class ParquetDataLoader:
         Args:
             record_type: Either 'submission' or 'comment' to denote current buffer
             being written to disk.
+            buffer: Dictionary of column name keys and list values for either submission
+            or comment data.
+            prefix (Optional): File name prefix. Useful for marking the final write
+            before load call is terminated.
         
         Notes:
             Writes *.parquet files to **/*-dataset directory.
         """
         schema = self._schemas[record_type]
-        # File name; Ex. SUBMISSION-0001-20250626-201522
+        # File name; Ex. submission-0001-20250626-201522 
+        # or final-submission-0002-20250626-223000 if prefix='final'
         fname = (
-            f'{record_type.lower()}-'
-            f'{self._batch_counters[record_type]:04d}-'
-            f'{dt.datetime.now():%Y%m%d-%H%M%S}.parquet'
+            (f'{prefix}-' if prefix else '')
+            + f'{record_type.lower()}-'
+            + f'{self._batch_counters[record_type]:04d}-'
+            + f'{dt.datetime.now():%Y%m%d-%H%M%S}.parquet'
             )
         # Absolute path; parquet.py config returns absolute paths as PosixPath
         fpath = self._dataset_paths[record_type] / fname
@@ -203,15 +211,15 @@ class ParquetDataLoader:
         if self._transformer:
             pa_table = self._transformer(pa_table)
         # Write to disk via GZIP for higher compression at the cost of write time, ideal
-        # for long term static storage
-        logger.debug("Writing buffer for %s. Batch #%d.", record_type, self._batch_counters[record_type])
+        # for long term static storage        
+        logger.debug('Writing buffer for %s. Batch #%d.', record_type, self._batch_counters[record_type])
         pq.write_table(pa_table, where=fpath, compression='GZIP')
-        logger.info("Write complete: %s", fpath)
+        logger.info('Write complete: %s', fpath)
     
     @staticmethod
     def _flush(buffer: Dict[str, List]):
         """Returns a tuple of empty buffer and byte count, in order, for an input buffer."""
-        logger.debug("Flushing buffer and resetting byte count.")
+        logger.debug('Flushing buffer and resetting byte count.')
         # Reconstruct buffer and return with empty values
         # Also return 0 for assignment to byte count
         return ({col : [] for col in buffer}, 0)

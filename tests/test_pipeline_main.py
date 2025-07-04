@@ -118,7 +118,7 @@ def stub_authenticate_reddit(self, reddit):
 class StubSubredditSearch:
     """Iterator that yields a list of Submissions when subreddit.search() is called."""
     def __init__(self):
-        # Yields a fixed list of Submission objects; set to 4 partitions
+        # Yields a fixed list of Submission objects; set to 4 partitions        
         self.return_vals = iter([
             SUBMISSION_OBJECTS[:5],
             SUBMISSION_OBJECTS[5:10],
@@ -128,16 +128,19 @@ class StubSubredditSearch:
     
     def __call__(self, *args, **kwargs):
         """Returns a partition of submission objects from the data samples."""
+        print('SUBMISSION OBJECT RETURNED')
         yield from next(self.return_vals)
     
 class StubTextParser:
     """Stubs the txt_to_list func with fixed return values per call."""
     return_vals = iter([['subreddit1', 'subreddit2'], ['query1', 'query2']])
     def __call__(self, *args, **kwargs):
+        print('FAKE TEXT PARSER CALLED')
         return next(self.return_vals)
 
 def fake_transform(table):
     """Fake transformation will convert all text data to uppercase."""
+    print('FAKE TRANSFORM CALLED')
     if table.schema.metadata[b'data_source'] == b'submission':
         out_table = (table.
                      set_column(
@@ -158,9 +161,9 @@ def fake_transform(table):
                      )
     return out_table
 
-@patch('usedcaranalytics.pipeline.streamer.logger')
-@patch('usedcaranalytics.pipeline.transformer.logger')
-@patch('usedcaranalytics.pipeline.loader.logger')
+# @patch('usedcaranalytics.pipeline.streamer.logger')
+# @patch('usedcaranalytics.pipeline.transformer.logger')
+# @patch('usedcaranalytics.pipeline.loader.logger')
 @patch('usedcaranalytics.pipeline.main.DataTransformer')
 @patch('usedcaranalytics.pipeline.main.txt_to_list')
 @patch('usedcaranalytics.pipeline.streamer.RateLimiter')
@@ -170,8 +173,7 @@ def fake_transform(table):
 def test_main(
     mock_reddit, stub_load_env, stub_parquet_cfg, 
     fake_ratelimiter, stub_txt_to_list, 
-    mock_transformer, mock_logging_loader, mock_logging_transformer,
-    mock_logging_streamer, tmp_path_factory
+    mock_transformer, tmp_path_factory
     ):
     """Integration test for the ETL pipeline script."""
     # Patch dependencies
@@ -203,8 +205,11 @@ def test_main(
     # Run main script
     main()
     
-    submission_pqt = list(temp_root.glob('data/processed/submission-dataset/*.parquet'))
-    comment_pqt = list(temp_root.glob('data/processed/comment-dataset/*.parquet'))
+    sub_cfg, com_cfg = stub_parquet_cfg.return_value
+    
+    print(f'LOOKING FOR PARQUET FILES IN\n{sub_cfg.dataset_path}\n{com_cfg.dataset_path}')
+    submission_pqt = list(sub_cfg.dataset_path.glob('*.parquet'))
+    comment_pqt = list(com_cfg.dataset_path.glob('*.parquet'))
     
     # Assert that new files were created
     assert submission_pqt

@@ -30,11 +30,11 @@ class RateLimiter:
     
     def _authenticate_reddit(self, reddit: Reddit):
         """Checks if reddit object passed to constructor contains valid credentials."""
-        if reddit.read_only:
-            self.reddit = reddit
+        self.reddit = reddit
+        if reddit.read_only:    
+            print('Access is in read-only mode. Limiting requests to 10 calls/min.')
             # Create instance attribute denoting new MAX_REQUESTS: 10 requests/min
             self.MAX_REQUESTS = 100
-            print('Access is in read-only mode. Limiting requests to 10 calls/min.')
             return self
         # Otherwise, check if OAuth passes
         try:
@@ -42,9 +42,7 @@ class RateLimiter:
         except OAuthException as e:
             print(e)
             raise Exception('Cannot construct RateLimiter with invalid Reddit object due to invalid API keys.')
-        else:
-            self.reddit = reddit
-            return self 
+        return self
     
     def evaluate(self):
         """Checks if current request can be accommodated based on current limits."""        

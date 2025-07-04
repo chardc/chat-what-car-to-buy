@@ -5,7 +5,7 @@ from usedcaranalytics.config.parquet_config import ParquetConfig
 from unittest.mock import patch
 
 @pytest.fixture
-def mock_get_parquet_configs():
+def mock_get_parquet_configs(tmp_path_factory):
     submission_schema = pa.schema([
         ("submission_id", pa.string()),
         ("title", pa.string())
@@ -14,8 +14,9 @@ def mock_get_parquet_configs():
         ("comment_id", pa.string()),
         ("body", pa.string())
         ])
-    sub_cfg = ParquetConfig('submission', '/root/data/processed/submission-dataset', submission_schema)
-    com_cfg = ParquetConfig('comment', '/root/data/processed/comment-dataset', comment_schema)
+    temp_dir = tmp_path_factory.mktemp('test_loader') / 'data/processed'
+    sub_cfg = ParquetConfig('submission', temp_dir / 'submission-dataset', submission_schema)
+    com_cfg = ParquetConfig('comment', temp_dir / 'comment-dataset', comment_schema)
     return (sub_cfg, com_cfg)
 
 @patch('usedcaranalytics.pipeline.loader.logger')
@@ -78,11 +79,15 @@ def test_set_target_mb(mock_logger, mock_get_parquet_configs):
 
 @patch('usedcaranalytics.pipeline.loader.logger')
 @patch('usedcaranalytics.pipeline.loader.ParquetDataLoader._flush')
-@patch('usedcaranalytics.pipeline.loader.ParquetDataLoader._write')
-def test_load(stubbed_flush, stubbed_write, mock_logging, mock_get_parquet_configs):
+def test_load(stubbed_flush, mock_logging, mock_get_parquet_configs):
     """Test loading logic with mocked data_stream."""
+    # Get temporary dataset paths
+    sub_cfg, com_cfg = mock_get_parquet_configs
+    sub_path, com_path = sub_cfg.dataset_path, com_cfg.dataset_path
+    
     # When called, return a flushed buffer and byte count
-    stubbed_write.side_effect = lambda buffer: ({k: [] for k in buffer}, 0)
+    stubbed_flush.side_effect = lambda buffer, *args, **kwargs: ({k: [] for k in buffer}, 0)
+    
     # target_MB==1 such that it will call _write for every record
     loader = ParquetDataLoader(mock_get_parquet_configs, target_MB=1 * 2**-20)
     fake_stream = iter([
@@ -92,11 +97,15 @@ def test_load(stubbed_flush, stubbed_write, mock_logging, mock_get_parquet_confi
         ('comment', {'comment_id': 'cid15', 'body': 'b15'}),
         ('submission', {'submission_id': 'sid2', 'title': 't2'})
         ])
+    
     loader.load(fake_stream)
+    
     # Should call _write for every record while streaming, then 1 call per 
     # record type at the end of load() -> 7 calls
-    assert loader._write.call_count == 7
     assert loader._flush.call_count == 7
+    # Files must at least be the number of respective records for sub & com data
+    assert len(list(sub_path.glob('*.parquet'))) >= 2
+    assert len(list(com_path.glob('*.parquet'))) >= 3
 
 # Pytest tmp_path fixture creates a temp directory to simulate disk write
 @patch('usedcaranalytics.pipeline.loader.logger')

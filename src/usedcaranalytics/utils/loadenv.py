@@ -17,7 +17,7 @@ def load_env():
         Loads environment variables from .env file.
     """
     # Load environment variables using absolute .env path
-    env_path = get_path(Path(__file__), subdir='config', target_file='.env')
+    env_path = get_path(start_path=__file__, subdir='config', target='.env')
     
     logger.info('Loading environment variables containing Reddit API keys and OAuth login credentials.')
     logger.debug('.env loaded from %s', str(env_path))
@@ -25,7 +25,7 @@ def load_env():
     load_dotenv(env_path)
     
     # Import credentials initialized by config.api module
-    from usedcaranalytics.config.api_config import PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME 
+    from usedcaranalytics.config.api_config import PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD
     
-    # Return tuple in same arrangement as praw.Reddit constructor kwargs
-    return PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME 
+    # Returns in the same order as it's used in praw.Reddit() instantiation
+    return PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME
