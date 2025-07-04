@@ -101,7 +101,7 @@ class DataStreamer:
         if progress_bar:
             submissions = tqdm(
                 submissions, total=limit, position=1, colour='red', 
-                desc=f"fetching submissions...", unit='posts', leave=False
+                desc=f"fetching submissions and comments...", unit='post', leave=False
             )
         # Fetch submissions, and for every submission, fetch the comments
         for submission in submissions:
@@ -141,8 +141,8 @@ class DataStreamer:
             logger.debug('Progress bar enabled for streaming data from search pairs.')
             search_pairs = list(search_pairs) # Generator -> list
             search_pairs = tqdm(
-                search_pairs, total=len(search_pairs), unit='queries',
-                desc=f'streaming subreddit search results...', colour='orange'
+                search_pairs, total=len(search_pairs), unit='query',
+                desc=f'streaming subreddit search results...', colour='green'
                 )
         # Parse submission and comment data with jittered API calls
         for subreddit, query in search_pairs:    
