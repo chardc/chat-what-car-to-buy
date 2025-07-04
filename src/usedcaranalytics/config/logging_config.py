@@ -3,17 +3,20 @@ import datetime as dt
 from usedcaranalytics.utils.getpath import get_repo_root
 
 def setup_logging(
-    level=logging.DEBUG, output_to_file: bool=True, output_to_console: bool=False
+    level=logging.DEBUG, output_to_file: bool=False, output_to_console: bool=False
     ):
     """
     Setup the logger globally throughout the project from entry point.
+    
     Args:
-        - level: Logging levels (logging.INFO, logging.DEBUG, etc.).
-        - output_to_file: If true, saves log to a *.log file in root/data/logs.
-        - output_to_console: If true, prints log to system console.
-    Returns:
-        - Configured global logger.
-        - *.log file and log stream, if set to True.
+        level (Default=logging.DEBUG): Logging level.
+        output_to_file (Default=True): If true, saves log to a *.log file in 
+        project_root/data/logs.
+        output_to_console (Default=False): If true, prints log to system console.
+    
+    Notes:
+        Configures the global logger. Outputs *.log file to project_root/data/logs
+        and streams the logs to console when respective args are enabled.
     """
     # Make log dir if nonexistent
     logs_dir = get_repo_root() / 'data/logs'

@@ -1,8 +1,11 @@
+import logging
 import datetime as dt, time, random, functools
 from collections import deque
 from typing import Tuple, List, Union
 from prawcore.exceptions import ResponseException, OAuthException
 from praw import Reddit
+
+logger = logging.getLogger(__name__)
 
 # RateLimiter class implementation for counting requests in 10-minute sliding window and
 # throttling requests to maintain < 100 requests/min average.
@@ -23,6 +26,7 @@ class RateLimiter:
         Returns:
             - RateLimiter object.
         """
+        logger.info('RateLimiter class instantiated.')
         self._authenticate_reddit(reddit)
         self.buffer_range = buffer_range
         self.total_requests = 0
@@ -32,7 +36,7 @@ class RateLimiter:
         """Checks if reddit object passed to constructor contains valid credentials."""
         self.reddit = reddit
         if reddit.read_only:    
-            print('Access is in read-only mode. Limiting requests to 10 calls/min.')
+            logger.info('Reddit API access is in read-only mode. Limiting requests to 10 calls/min.')
             # Create instance attribute denoting new MAX_REQUESTS: 10 requests/min
             self.MAX_REQUESTS = 100
             return self
@@ -40,7 +44,7 @@ class RateLimiter:
         try:
             reddit.user.me()
         except OAuthException as e:
-            print(e)
+            logger.critical('Exception encountered during OAuth: %s', e)
             raise Exception('Cannot construct RateLimiter with invalid Reddit object due to invalid API keys.')
         return self
     
@@ -58,6 +62,7 @@ class RateLimiter:
         
         # If we dip into the buffer, sleep until limits reset
         if remaining_requests - 1 < buffer:
+            logger.debug('Requests exceed safe rate limit. Remaining requests: %d', remaining_requests)
             # Calculate time left until limits refresh and add jitter
             reset_time = self.reddit.auth.limits['reset_timestamp']
             
@@ -68,6 +73,7 @@ class RateLimiter:
             
             delay = max(reset_time - time.time(), 0)
             delay += random.randrange(0.01, 5.0)
+            logger.debug('Sleeping for %d seconds...', delay)
             time.sleep(delay)
             
             # Re-evaluate if API call can proceed
@@ -152,6 +158,7 @@ def backoff_on_rate_limit(
                     return func(*args, **kwargs)
                 except ResponseException as e:
                     if attempt > max_retries:
+                        logger.critical('Max retries exceeded with Reddit API. Retry.')
                         raise Exception("Max retries exceeded with Reddit API.")
                     delay = random.uniform(
                         0, 
@@ -160,8 +167,7 @@ def backoff_on_rate_limit(
                             base_delay * 2 ** attempt
                             )
                         )
-                    print(f"[WARNING] {e.__class__.__name__} on attempt {attempt + 1},\
-                        retrying after {delay:.2f}s.")
+                    logger.warning('Warning: %s encountered on attempt %d, retrying after %ds...', e.__class__.__name__, attempt+1, delay)
                     time.sleep(delay)
                     attempt += 1
         return wrapper
