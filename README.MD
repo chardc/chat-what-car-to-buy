@@ -1,4 +1,4 @@
-# Used Car Analysis from Reddit Discussions
+# Used Car Analysis from Reddit Discussions (Ongoing Project)
 
 __Goal:__ Determine ideal used car models for my personal profile by leveraging crowd knowlege.
 
@@ -17,3 +17,8 @@ In the case of used cars, if a significant number of people praise a specific Ja
 2. [OPTIONAL] Run the pipeline.py script to extract data from Reddit and update the datasets in the data directory. Otherwise, you can skip this step and utilize the pre-scraped data under the data directory.
 3. [OPTIONAL] Check the notebooks to understand what each script does and the documentation for each function.
 4. __TO BE CONTINUED__
+
+## To be implemented:
+1. Analysis on scraped text data
+2. Recommender with text summarization for user-prompted queries (Ex. What's the best used sedan under $10,000)
+3. UI for user prompting and displaying results
