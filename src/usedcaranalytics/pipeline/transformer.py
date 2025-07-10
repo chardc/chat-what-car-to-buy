@@ -190,14 +190,14 @@ class DataTransformer():
     def remove_empty_rows_from_df(self, dataframe: pd.DataFrame):
         """
         Removes empty rows from a Pandas DataFrame. Empty rows are defined as rows containing
-        only contiguous space characters \s+ or containing empty string ''. Should be done
+        only contiguous space characters or containing empty string ''. Should be done
         after all pattern replacements.
         
         Args:
             dataframe: Pandas DataFrame.
             
         Returns:
-            dataframe: Pandas DataFrame without empty rows (either '' or '\s+').
+            dataframe: Pandas DataFrame without empty rows (either '' or ' ').
         """
         logger.debug('remove_empty_rows_from_df called for %s', self.current_record_type)
         input_rows = dataframe.shape[0]
@@ -256,8 +256,8 @@ class DataTransformer():
         return out_table
     
     def remove_match_from_table(
-        self,
-        table: pa.Table, regex_patterns: Union[Tuple[str], List[str]]=(r"\[deleted\]",r"\[removed\]"), 
+        self, table: pa.Table, 
+        regex_patterns: Union[Tuple[str], List[str]]=(r'\[deleted\]',r'\[removed\]'), 
         match_logic: Literal['union', 'intersect']='union'
         ):
         """

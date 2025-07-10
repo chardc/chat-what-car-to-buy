@@ -22,7 +22,7 @@ def setup_logging(
     logs_dir = get_repo_root() / 'data/logs'
     logs_dir.mkdir(parents=True, exist_ok=True)
     # File format: /project_root/data/logs/etl-20250630-103000.log
-    logging_fp = logs_dir / f'usedcaranalytics-'f'{dt.datetime.now(dt.timezone.utc):%Y%m%dT%H%M%SZ}.log'
+    logging_fp = logs_dir / f'usedcaranalytics-'f'{dt.datetime.now():%Y%m%dT%H%M%S}.log'
     
     # Setup handlers for logger
     handlers = []
@@ -35,7 +35,7 @@ def setup_logging(
     logging.basicConfig(
         encoding='utf-8', level=level, handlers=handlers,
         format='%(levelname)s | %(asctime)s | %(name)s | %(message)s',
-        datefmt='%Y-%m-%dT%H:%M:%SZ' #ISO 8601 for UTC datetime
+        datefmt='%Y-%m-%d %H:%M:%S' # System time
         )
     
 if __name__ == '__main__':

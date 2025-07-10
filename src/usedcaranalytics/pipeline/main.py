@@ -54,7 +54,7 @@ def main(**stream_kwargs):
     # Initialize the ETL objects
     streamer = DataStreamer(reddit)
     transformer = DataTransformer()
-    loader = ParquetDataLoader(loader_config, target_MB=16, transformer=transformer) # Smaller target MB for frequent writes
+    loader = ParquetDataLoader(loader_config, target_MB=32, transformer=transformer) # Smaller target MB for frequent writes
     
     # Get the list of subreddits and queries
     subreddits = txt_to_list(target_file='subreddits.txt', subdir='data/raw')
@@ -68,4 +68,4 @@ def main(**stream_kwargs):
     loader.load(stream)
     
 if __name__ == "__main__":
-    main(limit=10)
+    main()
