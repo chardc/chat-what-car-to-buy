@@ -35,8 +35,10 @@ def main(**stream_kwargs):
     PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME = load_env()
     
     # Try getting schema from schemas.json in config dir, otherwise, return default.
+    # Save the data to root/data/raw/**-dataset
     try:
         loader_config = get_parquet_configs(
+            subdir='raw',
             schema_path=get_path(start_path=__file__, target='schemas.json')
             )
     except:
