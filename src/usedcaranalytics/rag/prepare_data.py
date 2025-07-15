@@ -30,19 +30,15 @@ def main():
     submissions = submission_df.copy().drop(columns=['title', 'selftext'])
     comments = comment_df.copy().drop(columns=['body']).rename(columns={'parent_submission_id': 'submission_id'})
     
-    # Merge submission title and selftext with context tags
-    logger.debug('Merging submission title and selftext. Padding with context tags.')
-    context_docs = (submission_df.loc[:, ['title', 'selftext']]
-                     .apply(lambda row: '<title> ' + row.title + ' </title> <selftext> ' + row.selftext + ' </selftext>', axis=1)
-                     )
+    # Merge submission title and selftext
+    logger.debug('Merging submission title and selftext.')
+    context_docs = (submission_df.title + ' ' + submission_df.selftext).values
     logger.debug('Inserting "document" column to submissions dataframe.')
     submissions.insert(0, 'document', context_docs)
     
     # Add comment tags to comments; tags can delineate data source from user prompt in RAG model
-    logger.debug('Padding comments with comment tag.')
-    comment_docs = comment_df.loc[:, 'body'].map(lambda row: '<comment> ' + row + ' </comment>')
     logger.debug('Inserting "document" column to comments dataframe.')
-    comments.insert(0, 'document', comment_docs)
+    comments.insert(0, 'document', comment_df.body.values)
     
     # Export only the documents (text) to parquet under root/data/processed dir
     wrangling.pandas_to_parquet(submissions, 'submissions')
