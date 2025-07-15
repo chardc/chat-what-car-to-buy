@@ -11,7 +11,7 @@ of all parquet files into singular dataset, deduplication of dataset, text clean
 basic record masking (e.g. filtering out low scores or non-token text records).
 """
 
-from typing import Hashable
+from typing import Hashable, List
 import pyarrow.parquet as pq
 import pandas as pd
 from usedcaranalytics.utils.getpath import get_repo_root
@@ -52,7 +52,7 @@ def deduplicate_pandas(df, subset: Hashable=None):
     """
     return df.drop_duplicates(subset=subset)
 
-def remove_empty_rows_pandas(df, cols: list, pat: str=r'\b\w{2,}'):
+def remove_empty_rows_pandas(df, cols: List[str], pat: str=r'\b\w{2,}'):
     """
     Performs naive tokenization of text records based on provided regex pattern
     and removes rows without tokens. Default token is a word char with len >= 2.
@@ -85,13 +85,13 @@ def remove_low_score_pandas(df, threshold: int):
     out_df = df.copy()
     return out_df.loc[out_df.score >= threshold]
 
-def replace_text_pandas(df, col: str, pat: str, repl: str):
+def replace_text_pandas(df, cols: List[str], pat: str, repl: str):
     """
     Remove or replace text with context tags.
     
     Args:
         df: Pandas dataframe.
-        col: Column name containing text for replacement.
+        cols: List of column names containing text for replacement.
         pat: Regex pattern.
         repl: Replacement string.
     
@@ -99,41 +99,45 @@ def replace_text_pandas(df, col: str, pat: str, repl: str):
         df: Copy of original dataframe with replaced or padded string.
     """
     out_df = df.copy()
-    out_df.loc[:, col] = out_df.loc[:, col].str.replace(pat, repl, regex=True)
+    out_df.loc[:, cols] = (out_df.loc[:, cols]
+                           .apply(lambda col: col.str.replace(pat, repl, regex=True))
+                           )
     return out_df
 
-def replace_url_pandas(df, col: str, pat: str=r'[\[\(]?https?://[\S]+[\]\)]?', repl: str='<URL>'):
+def replace_url_pandas(df, cols: List[str], pat: str=r'[\[\(]?https?://[\S]+[\]\)]?', repl: str='<URL>'):
     """
     Wrapper for replace_text_pandas configured to replace URLs. Default pads links with <URL>.
     
     Args:
         df: Pandas dataframe.
-        col: Column name containing text records.
+        cols: List of column names containing text for replacement.
         pat: Regex pattern for URL.
         repl: Replacement string for URL. Default is <URL>.
         
     Returns:
         df: Copy of original dataframe with padded URLs.
     """
-    return replace_text_pandas(df, col, pat, repl)
+    return replace_text_pandas(df, cols, pat, repl)
 
-def remove_extra_whitespace_pandas(df, col: str):
+def remove_extra_whitespace_pandas(df, cols: List[str]):
     """
     Wrapper for replace_text_pandas configured to remove contiguous extra whitespaces
     with a single space.
     
     Args:
         df: Pandas dataframe.
-        col: Column name containing text records.
+        cols: List of column names containing text for replacement.
         
     Returns:
         df: Copy of original dataframe with extra whitespaces removed.
     """
     # Only replace contiguous whitespaces with single space.
-    return replace_text_pandas(df, col, pat=r'\s{2,}', repl=' ')
+    return replace_text_pandas(df, cols, pat=r'\s{2,}', repl=' ')
 
-def lowercase_text_pandas(df, cols: list):
+def lowercase_text_pandas(df, cols: list[str]):
     """
+    Optional. ETL pipeline already converts text data to lowercase.
+    
     Args:
         df: Pandas dataframe.
         cols: List of column names containing text records.
@@ -142,5 +146,7 @@ def lowercase_text_pandas(df, cols: list):
         df: Copy of original dataframe with text records in lowercase.
     """
     out_df = df.copy()
-    out_df.loc[:, cols] = out_df.loc[:, cols].apply(lambda col: col.str.lower())
+    out_df.loc[:, cols] = (out_df.loc[:, cols]
+                           .apply(lambda col: col.str.lower())
+                           )
     return out_df
