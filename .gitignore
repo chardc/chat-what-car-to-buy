@@ -7,12 +7,12 @@
 # All logs
 **/*.log
 
-# All scratch / sandbox notebooks
-**/*scratch.ipynb
-**/*sandbox.ipynb
+# All scratch / sandbox notebooks and scripts
+**/*scratch.*
+**/*sandbox.*
 
 # Editable module installation for local dev
-**/usedcaranalytics.egg-info
+**/*.egg-info
 
 # .env file containing sensitive API login credentials
 **/.env

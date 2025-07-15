@@ -10,11 +10,13 @@ whitespaces). This module intends to provide helper functions that handle the me
 of all parquet files into singular dataset, deduplication of dataset, text cleaning and
 basic record masking (e.g. filtering out low scores or non-token text records).
 """
-
-from typing import Hashable, List
-import pyarrow.parquet as pq
+import logging
 import pandas as pd
+import pyarrow.parquet as pq
+from typing import Hashable, List, Literal
 from usedcaranalytics.utils.getpath import get_repo_root
+
+logger = logging.getLogger(__name__)
 
 def read_dataset(path, **kwargs):
     """
@@ -150,3 +152,66 @@ def lowercase_text_pandas(df, cols: list[str]):
                            .apply(lambda col: col.str.lower())
                            )
     return out_df
+
+def wrangle_dataset(dataset):
+    """
+    Perform data cleaning and wrangling on an input PyArrow dataset.
+    
+    Args:
+        dataset: PyArrow ParquetDataset.
+        
+    Returns:
+        dataframe: Cleaned and wrangled Pandas DataFrame.
+    """
+    # Either submission or comment; Get primary keys and columns containing text
+    data_source = dataset.schema.metadata[b'data_source'].decode()
+    subset = 'submission_id' if data_source == 'submission' else 'comment_id'
+    cols = ['title', 'selftext'] if data_source == 'submission' else ['body']
+    
+    # Convert dataset to pandas for in-memory transformations
+    logger.debug('Converting ParquetDataset to Pandas DataFrame.')
+    out_df = dataset_to_pandas(dataset)
+
+    # Deduplication based on column subset
+    logger.debug('Deduplicating %s dataframe.', data_source)
+    out_df = deduplicate_pandas(out_df, subset)
+
+    # Remove empty records (records without valid tokens)
+    logger.debug('Removing empty rows from %s dataframe.', data_source)
+    out_df = remove_empty_rows_pandas(out_df, cols)
+    
+    # Filter unreliable / low-score comments and posts
+    logger.debug('Removing low score records from %s dataframe.', data_source)
+    out_df = remove_low_score_pandas(out_df, threshold=-2)
+    
+    # Pad URLs with context tags <URL>
+    logger.debug('Padding URLs in %s from %s dataframe.', ', '.join(cols), data_source)
+    out_df = replace_url_pandas(out_df, cols)
+    
+    # Remove extra whitespaces
+    logger.debug('Removing extra whitespaces from %s dataframe.', data_source)
+    out_df = remove_extra_whitespace_pandas(out_df, cols)
+    
+    logger.info('Finished preprocessing %s dataset.', data_source) 
+    return out_df
+
+def pandas_to_parquet(df, data_source: Literal['comments', 'submissions'], dir_path=None):
+    """
+    Args:
+        df: Pandas DataFrame.
+        data_source: Specify either 'comments' or 'submissions'
+        dir_path: Path of directory where parquet will be stored. Default is 'data/processed' when None.
+    
+    Notes:
+        Export pandas dataframe to parquet.
+    """
+    if data_source not in ['comments', 'submissions']:
+        raise ValueError('Data source can only be either "comments" or "submissions".')
+    
+    if dir_path is None:
+        dir_path = get_repo_root() / 'data/processed'
+    
+    logger.debug('Exporting %s to disk path: %s', data_source, dir_path / f'{data_source}.parquet')
+    
+    df.to_parquet(dir_path / f'{data_source}.parquet', engine='pyarrow')
+    logger.info('Finished exporting preprocessed Reddit post and comment data to %s', dir_path)
