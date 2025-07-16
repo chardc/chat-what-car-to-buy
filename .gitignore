@@ -17,5 +17,5 @@
 # .env file containing sensitive API login credentials
 **/.env
 
-# All raw data
-**/raw
+# All parquet files
+*.parquet
