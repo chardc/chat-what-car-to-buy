@@ -2,7 +2,7 @@ import logging
 import datetime as dt, time, random, functools
 from collections import deque
 from typing import Tuple, List, Union
-from prawcore.exceptions import OAuthException, ResponseException, ServerError, TooManyRequests, RequestException
+from prawcore.exceptions import OAuthException, ServerError, TooManyRequests, RequestException
 from praw import Reddit
 
 logger = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ class RateLimiter:
             {self.print_total_requests()}'
 
 # Retriable prawcore exceptions
-TRANSIENT_ERRORS = (ResponseException, ServerError, TooManyRequests, RequestException)
+TRANSIENT_ERRORS = (ServerError, TooManyRequests, RequestException)
 
 # Backoff algorithm with full jitter for handling transient failures from HTTP 429 response
 def backoff_on_rate_limit(max_retries: int=5, base_delay: float=1.0, cap_delay: float=60.0):
