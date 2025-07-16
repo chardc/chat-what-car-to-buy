@@ -1,4 +1,4 @@
-from usedcaranalytics.utils.getpath import get_path
+from chatwhatcartobuy.utils.getpath import get_path
 from dotenv import load_dotenv
 from pathlib import Path
 import logging
@@ -25,7 +25,7 @@ def load_env():
     load_dotenv(env_path)
     
     # Import credentials initialized by config.api module
-    from usedcaranalytics.config.api_config import PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD
+    from chatwhatcartobuy.config.api_config import PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD
     
     # Returns in the same order as it's used in praw.Reddit() instantiation
     return PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME

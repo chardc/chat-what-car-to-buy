@@ -4,7 +4,7 @@ import datetime as dt
 import pyarrow as pa, pyarrow.parquet as pq
 from collections.abc import Generator, Callable
 from typing import Tuple, NamedTuple, Union, Optional, Dict, List
-from usedcaranalytics.pipeline.transformer import DataTransformer
+from chatwhatcartobuy.pipeline.transformer import DataTransformer
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ def test_load_env(patch_env, monkeypatch):
     # Patch env 
     patch_env
     # Ensure all env variables are returned with corresponding values
-    from usedcaranalytics.config.api_config import PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD
+    from chatwhatcartobuy.config.api_config import PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD
     
     assert PRAW_ID == 'test_client_key'
     assert PRAW_SECRET == 'test_secret_key'

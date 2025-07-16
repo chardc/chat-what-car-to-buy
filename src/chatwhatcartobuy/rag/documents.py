@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Optional
-from usedcaranalytics.utils.getpath import get_repo_root
+from chatwhatcartobuy.utils.getpath import get_repo_root
 from langchain_text_splitters import TokenTextSplitter
 from langchain_core.documents import Document
 

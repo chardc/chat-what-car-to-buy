@@ -4,7 +4,7 @@ from praw.models import Subreddit, Submission
 from tqdm.auto import tqdm
 from typing import List
 from itertools import product
-from usedcaranalytics.utils.ratelimiter import RateLimiter, backoff_on_rate_limit
+from chatwhatcartobuy.utils.ratelimiter import RateLimiter, backoff_on_rate_limit
 
 logger = logging.getLogger(__name__)
 

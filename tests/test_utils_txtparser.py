@@ -1,7 +1,7 @@
 import pytest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from usedcaranalytics.utils.txtparser import txt_to_list
+from chatwhatcartobuy.utils.txtparser import txt_to_list
 from pathlib import Path
 
 def generate_txt_tempfile(lines: list):
@@ -30,7 +30,7 @@ def mock_empty_txt_file():
     lines = []
     yield from generate_txt_tempfile(lines)
 
-@patch('usedcaranalytics.utils.txtparser.get_path')
+@patch('chatwhatcartobuy.utils.txtparser.get_path')
 def test_default_txt_to_list(mock_get_path, mock_txt_file):
     """Tests basic functionality of text to list func."""
     mock_get_path.return_value = mock_txt_file
@@ -38,7 +38,7 @@ def test_default_txt_to_list(mock_get_path, mock_txt_file):
     subreddits = txt_to_list('mock_subreddits.txt') 
     assert subreddits == ['cars', 'vehicles']
 
-@patch('usedcaranalytics.utils.txtparser.get_path')
+@patch('chatwhatcartobuy.utils.txtparser.get_path')
 def test_empty_txt_to_list(mock_get_path, mock_empty_txt_file):
     """Tests handling of empty file objects. Should return empty list"""
     mock_get_path.return_value = mock_empty_txt_file

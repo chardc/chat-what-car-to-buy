@@ -14,9 +14,9 @@ or downstream applications (Ex. document retriever).
 import logging
 from typing import Literal, Optional, Dict
 from pathlib import Path
-from usedcaranalytics.pipeline import wrangling
-from usedcaranalytics.utils.getpath import get_latest_path
-from usedcaranalytics.config.logging_config import setup_logging
+from chatwhatcartobuy.pipeline import wrangling
+from chatwhatcartobuy.utils.getpath import get_latest_path
+from chatwhatcartobuy.config.logging_config import setup_logging
 
 def prepare_and_export_data(
     dataset_paths: Optional[Dict[Literal['submissions', 'comments'], Path]]=None, 

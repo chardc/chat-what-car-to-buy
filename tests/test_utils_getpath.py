@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from usedcaranalytics.utils.getpath import get_path, get_repo_root
+from chatwhatcartobuy.utils.getpath import get_path, get_repo_root
 
 @pytest.fixture
 def mock_path():

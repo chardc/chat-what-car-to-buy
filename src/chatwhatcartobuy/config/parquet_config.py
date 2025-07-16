@@ -3,7 +3,7 @@ import pyarrow as pa
 from pathlib import Path
 from collections import namedtuple
 from typing import Optional, Union, Tuple, List
-from usedcaranalytics.utils.getpath import get_repo_root
+from chatwhatcartobuy.utils.getpath import get_repo_root
 
 ## Initialize namedtuple for Parquet Config for ease of access and immutability
 ParquetConfig = namedtuple('ParquetConfig',['record_type','dataset_path','schema'])
@@ -136,7 +136,7 @@ def get_parquet_configs(
             )
         )
 
-# Refactored to usedcaranalytics.utils.getpath.get_path 
+# Refactored to chatwhatcartobuy.utils.getpath.get_path 
 # def get_repo_root(
 #     start_path: Union[str, Path]=None, 
 #     sentinels: Tuple[str]=('.git','pyproject.toml','setup.py','README.md')

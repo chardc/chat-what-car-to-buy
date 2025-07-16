@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from usedcaranalytics.pipeline import wrangling
+from chatwhatcartobuy.pipeline import wrangling
 
 def test_deduplicate_pandas():
     df = pd.DataFrame(

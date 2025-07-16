@@ -1,5 +1,5 @@
-from typing import Union, Tuple, List, Optional
-from usedcaranalytics.utils.getpath import get_path
+from typing import Optional
+from chatwhatcartobuy.utils.getpath import get_path
 
 def txt_to_list(target_file: str, subdir: Optional[str]=None):
     """
@@ -15,9 +15,7 @@ def txt_to_list(target_file: str, subdir: Optional[str]=None):
     file_path = get_path(__file__, target_file, subdir)
     with open(file_path, 'r') as f:
         # Ignore comments and empty lines
-        txt_list = [
-            line.rstrip("\n") for line in f 
-            if not (line.startswith('#') or line.startswith("\n"))
-            ]
+        txt_list = [line.rstrip("\n") for line in f 
+                    if not (line.startswith('#') or line.startswith("\n"))
+                    ]
     return txt_list
-    

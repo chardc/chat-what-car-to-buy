@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from usedcaranalytics.pipeline.streamer import DataStreamer
+from chatwhatcartobuy.pipeline.streamer import DataStreamer
 
 @pytest.fixture
 def mock_reddit(mock_subreddit):
@@ -71,7 +71,7 @@ def test_initialization(mock_reddit):
     # Ensure that rate_limiter attr has evaluate() method
     assert getattr(streamer.rate_limiter, 'evaluate', False)
 
-@patch('usedcaranalytics.pipeline.streamer.RateLimiter')
+@patch('chatwhatcartobuy.pipeline.streamer.RateLimiter')
 def test_fetch_submissions(mock_ratelimiter, mock_subreddit, mock_reddit):
     """Tests _fetch_submissions method if it returns an iterator of Submission obj."""
     mock_ratelimiter.return_value.evaluate = MagicMock()
@@ -84,7 +84,7 @@ def test_fetch_submissions(mock_ratelimiter, mock_subreddit, mock_reddit):
     # subreddit.search() method should be called with args
     subreddit.search.assert_called_with(query='test query', limit=1)
 
-@patch('usedcaranalytics.pipeline.streamer.RateLimiter')
+@patch('chatwhatcartobuy.pipeline.streamer.RateLimiter')
 def test_fetch_comments(mock_ratelimiter, mock_reddit, mock_submission, mock_comment):
     """Tests _fetch_comments yields if it yields comment objects."""
     mock_ratelimiter.return_value.evaluate = MagicMock()
@@ -157,7 +157,7 @@ def test_stream(monkeypatch, mock_streamer, mock_stream_search_results):
     # Should be called 4 times based on product(subreddits, queries)
     assert stream_search_results_fn.call_count == 4
 
-@patch('usedcaranalytics.pipeline.streamer.tqdm')
+@patch('chatwhatcartobuy.pipeline.streamer.tqdm')
 def test_stream_with_progress_bar(stub_tqdm, monkeypatch, mock_streamer, mock_stream_search_results):
     """Tests stream and stream_search_results handle progress_bar argument."""
     # Mock the DataStreamer

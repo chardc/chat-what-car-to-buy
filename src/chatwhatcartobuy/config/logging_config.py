@@ -1,6 +1,6 @@
 import logging
 import datetime as dt
-from usedcaranalytics.utils.getpath import get_repo_root
+from chatwhatcartobuy.utils.getpath import get_repo_root
 
 def setup_logging(
     level=logging.DEBUG, file_prefix: str=None, target_dir: str='data/logs',

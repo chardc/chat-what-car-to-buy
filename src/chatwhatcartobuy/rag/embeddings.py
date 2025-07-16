@@ -2,7 +2,7 @@ import os
 from typing import Literal, Iterable
 import pandas as pd
 import numpy as np
-from usedcaranalytics.utils.getpath import get_repo_root
+from chatwhatcartobuy.utils.getpath import get_repo_root
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
 def build_embedding_model(

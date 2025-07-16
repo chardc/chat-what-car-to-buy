@@ -2,14 +2,14 @@
 
 import logging
 from praw import Reddit
-from usedcaranalytics.pipeline.streamer import DataStreamer
-from usedcaranalytics.pipeline.transformer import DataTransformer
-from usedcaranalytics.pipeline.loader import ParquetDataLoader
-from usedcaranalytics.config.parquet_config import get_parquet_configs
-from usedcaranalytics.config.logging_config import setup_logging
-from usedcaranalytics.utils.txtparser import txt_to_list
-from usedcaranalytics.utils.loadenv import load_env
-from usedcaranalytics.utils.getpath import get_path
+from chatwhatcartobuy.pipeline.streamer import DataStreamer
+from chatwhatcartobuy.pipeline.transformer import DataTransformer
+from chatwhatcartobuy.pipeline.loader import ParquetDataLoader
+from chatwhatcartobuy.config.parquet_config import get_parquet_configs
+from chatwhatcartobuy.config.logging_config import setup_logging
+from chatwhatcartobuy.utils.txtparser import txt_to_list
+from chatwhatcartobuy.utils.loadenv import load_env
+from chatwhatcartobuy.utils.getpath import get_path
 
 def main(**stream_kwargs):
     """

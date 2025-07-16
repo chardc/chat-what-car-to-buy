@@ -15,7 +15,7 @@ import datetime as dt
 import pandas as pd
 import pyarrow.parquet as pq
 from typing import Hashable, List, Literal
-from usedcaranalytics.utils.getpath import get_repo_root
+from chatwhatcartobuy.utils.getpath import get_repo_root
 
 logger = logging.getLogger(__name__)
 

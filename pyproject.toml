@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "usedcaranalytics"
+name = "chatwhatcartobuy"
 version = "0.1.0"
-description = "Reddit Used Car Analytics"
+description = "RAG-powered AI Chatbot to assist users in buying used cars."
 authors = [
     { name = "Richard Canlas" }
 ]

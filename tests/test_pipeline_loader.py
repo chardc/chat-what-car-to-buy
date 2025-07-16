@@ -1,7 +1,7 @@
 import pytest
 import pyarrow as pa
-from usedcaranalytics.pipeline.loader import ParquetDataLoader
-from usedcaranalytics.config.parquet_config import ParquetConfig
+from chatwhatcartobuy.pipeline.loader import ParquetDataLoader
+from chatwhatcartobuy.config.parquet_config import ParquetConfig
 from unittest.mock import patch
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def test_set_target_mb(mock_get_parquet_configs):
     assert fake_loader.target_MB == 32.5
     assert fake_loader._target_bytes == int(32.5 * 2**20)
 
-@patch('usedcaranalytics.pipeline.loader.ParquetDataLoader._flush')
+@patch('chatwhatcartobuy.pipeline.loader.ParquetDataLoader._flush')
 def test_load(stubbed_flush, mock_get_parquet_configs):
     """Test loading logic with mocked data_stream."""
     # Get temporary dataset paths

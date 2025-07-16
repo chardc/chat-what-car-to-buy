@@ -4,7 +4,7 @@ import datetime as dt
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from dataclasses import dataclass
-from usedcaranalytics.pipeline.etl import main, get_parquet_configs
+from chatwhatcartobuy.pipeline.etl import main, get_parquet_configs
 import pyarrow.compute as pc
 
 @dataclass
@@ -162,13 +162,13 @@ def fake_transform(table):
     return out_table
 
 # Remove log file creation
-@patch('usedcaranalytics.pipeline.etl.setup_logging')
-@patch('usedcaranalytics.pipeline.etl.DataTransformer')
-@patch('usedcaranalytics.pipeline.etl.txt_to_list')
-@patch('usedcaranalytics.pipeline.streamer.RateLimiter')
-@patch('usedcaranalytics.pipeline.etl.get_parquet_configs')
-@patch('usedcaranalytics.pipeline.etl.load_env')
-@patch('usedcaranalytics.pipeline.etl.Reddit')
+@patch('chatwhatcartobuy.pipeline.etl.setup_logging')
+@patch('chatwhatcartobuy.pipeline.etl.DataTransformer')
+@patch('chatwhatcartobuy.pipeline.etl.txt_to_list')
+@patch('chatwhatcartobuy.pipeline.streamer.RateLimiter')
+@patch('chatwhatcartobuy.pipeline.etl.get_parquet_configs')
+@patch('chatwhatcartobuy.pipeline.etl.load_env')
+@patch('chatwhatcartobuy.pipeline.etl.Reddit')
 def test_main(
     mock_reddit, stub_load_env, stub_parquet_cfg, 
     fake_ratelimiter, stub_txt_to_list, 

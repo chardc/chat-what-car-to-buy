@@ -10,17 +10,13 @@ retrieve the closest match to the embedded query.
 
 4. Modify the user prompt to include the retrieved references.
 """
-
-from fileinput import filename
 import logging
 import pandas as pd
-from pandas.tests.tslibs.test_liboffsets import get_lastbday
-from usedcaranalytics.utils.getpath import get_path, get_latest_path
-from usedcaranalytics.rag.prep import prepare_and_export_data
-from usedcaranalytics.rag.embeddings import build_embedding_model
-from usedcaranalytics.rag.documents import chunks_from_pandas
-from usedcaranalytics.config.logging_config import setup_logging
-
+from chatwhatcartobuy.utils.getpath import get_latest_path
+from chatwhatcartobuy.rag.prep import prepare_and_export_data
+from chatwhatcartobuy.rag.embeddings import build_embedding_model
+from chatwhatcartobuy.rag.documents import chunks_from_pandas
+from chatwhatcartobuy.config.logging_config import setup_logging
 
 def parse_latest_data(search_pat: str):
     """
