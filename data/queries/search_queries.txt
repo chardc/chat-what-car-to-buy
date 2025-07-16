@@ -1,21 +1,27 @@
-# Price-specific with broad regional coverage
+# Price-specific + regional scope
 affordable reliable used cars under 15k Australia
 affordable reliable used cars under 10k USA
 
-# Practical advice and purchasing guidelines (general)
-first-time used car buyer tips and common mistakes
-used car inspection checklist and buying advice
+# First-time buyer & inspection advice
+first-time used car buyer tips common mistakes
+used car inspection checklist buying advice
 
-# Specific car types for recommendation systems
-best reliable used hatchbacks reviews and issues
-used SUV 4WD common issues and reliability discussion
+# Vehicle type & reliability issues
+best reliable used hatchbacks reviews issues
+used SUV 4WD common issues reliability discussion
 
-# Mileage-focused reliability and valuation discussions
-high mileage used car reliability and problems
-low mileage used cars buying advice and value depreciation
+# Mileage-based value & reliability
+high mileage used car reliability problems
+low mileage used cars buying advice depreciation
 
-# Valuation & economic factors
-fair price valuation methods for used cars Australia USA
+# Economic valuation by region
+fair price valuation used cars Australia
+fair price valuation used cars USA
 
-# Model-specific practical reliability insights
-Toyota Corolla Mazda 3 used reliability and common issues
+# Model-specific deep dives
+Toyota Corolla used reliability common issues
+Mazda 3 used reliability common issues
+Honda Civic used reliability common issues
+Subaru Outback used reliability common issues
+Toyota Camry used reliability common issues
+Honda Accord used reliability common issues
