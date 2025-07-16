@@ -33,7 +33,7 @@ def mock_submission_table():
                 ("timestamp", pa.timestamp("s")),
                 ("subreddit", pa.string()),
                 ("num_comments", pa.int64())
-            ], metadata={b'data_source':b'submission'}
+            ], metadata={b'record_type':b'submission'}
         )
     )
 
@@ -59,7 +59,7 @@ def mock_comment_table():
                 ("timestamp", pa.timestamp("s")),
                 ("subreddit", pa.string()),
                 ("parent_submission_id", pa.string())
-            ], metadata={b'data_source':b'comment'}
+            ], metadata={b'record_type':b'comment'}
         )
     )
 
@@ -126,7 +126,7 @@ def test_remove_matching_comment(mock_comment_table):
 
 def test_edge_case_empty_table():
     """Tests behavior with an empty PyArrow table."""
-    empty_schema = pa.schema([], metadata={b'data_source': b'submission'})
+    empty_schema = pa.schema([], metadata={b'record_type': b'submission'})
     empty_table = pa.Table.from_batches([], schema=empty_schema)
     transformer = DataTransformer()
     result = transformer.transform(empty_table)
