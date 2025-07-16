@@ -2,7 +2,7 @@ import logging
 import datetime as dt, time, random, functools
 from collections import deque
 from typing import Tuple, List, Union
-from prawcore.exceptions import ResponseException, OAuthException
+from prawcore.exceptions import OAuthException, ResponseException, ServerError, TooManyRequests, RequestException
 from praw import Reddit
 
 logger = logging.getLogger(__name__)
@@ -21,10 +21,11 @@ class RateLimiter:
     def __init__(self, reddit: Reddit, buffer_range: Union[Tuple[int, int], List[int]]=(50, 100)):
         """
         Args:
-            - reddit: PRAW Reddit object.
-            - buffer_range: Tuple or list containing the minimum and maximum value of API request buffers.
+            reddit: PRAW Reddit object.
+            buffer_range: Tuple or list containing the minimum and maximum value of API request buffers.
+        
         Returns:
-            - RateLimiter object.
+            ratelimiter: RateLimiter object.
         """
         logger.info('RateLimiter class instantiated.')
         self._authenticate_reddit(reddit)
@@ -63,7 +64,7 @@ class RateLimiter:
         # If we dip into the buffer, sleep until limits reset
         if remaining_requests - 1 < buffer:
             logger.debug('Requests exceed safe rate limit. Remaining requests: %d', remaining_requests)
-            # Calculate time left until limits refresh and add jitter
+            # Calculate time left until limits refresh
             reset_time = self.reddit.auth.limits['reset_timestamp']
             
             # If Praw returns no information, then manually compute request reset time
@@ -90,8 +91,8 @@ class RateLimiter:
         Failsafe for when REDDIT.auth.limits is unavailable. Tracks the requests_in_window attribute, which
         is a deque containing timestamps of API requests made in the current sliding window (600 seconds).
         
-        Usage: 
-            - Before every API call, refresh the sliding window and append current timestamp to mark 
+        Notes: 
+            Before every API call, refresh the sliding window and append current timestamp to mark 
             outbound request via "self._refresh_window()._log_request()".
         """
         self.requests_in_window.append(time.time())
@@ -130,44 +131,39 @@ class RateLimiter:
         return f'RateLimiter object: {self.print_remaining_requests()} available requests in current window. \
             {self.print_total_requests()}'
 
+# Retriable prawcore exceptions
+TRANSIENT_ERRORS = (ResponseException, ServerError, TooManyRequests, RequestException)
+
 # Backoff algorithm with full jitter for handling transient failures from HTTP 429 response
-def backoff_on_rate_limit(
-    max_retries: int=5, 
-    base_delay: float=1.0, 
-    cap_delay: float=60.0
-    ):
+def backoff_on_rate_limit(max_retries: int=5, base_delay: float=1.0, cap_delay: float=60.0):
     """
-    Decorator factory that applies exponential backoff (with optional jitter) when Reddit API
-    rate limits (HTTP 429) or server errors occur. Stops after max_retries and re-raises the exception.
+    Decorator factory that applies exponential backoff when encountering a transient error. 
+    Stops after max_retries and re-raises the exception.
     
     Args:
-        - max_retries: Integer value for max retries. When attempts exceed this number, an Exception is raised.
-        - base_delay: Float for base delay in seconds (i.e. Delay at first failed attempt).
-        - cap_delay: Float for maximum delay in seconds.
-        - jitter: Bool on whether to implement full jitter or not.
+        max_retries: Integer value for max retries. When attempts exceed this number, an Exception is raised.
+        base_delay: Float for base delay in seconds (i.e. Delay at first failed attempt).
+        cap_delay: Float for maximum delay in seconds.
+    
     Returns:
-        - Decorator to be applied to an PRAW API request wrapper.
+        decorator: Decorator to be applied to an PRAW API request wrapper.
     """
     def decorator(func):# -> _Wrapped[Callable[..., Any], Any, Callable[..., Any], Any]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            # Start with base delay, then exponentially scale by attempt
+            # Start with base delay, then exponentially scale delay per retry
             attempt = 0
             while True:
                 try:
                     return func(*args, **kwargs)
-                except ResponseException as e:
+                except TRANSIENT_ERRORS as e:
                     if attempt > max_retries:
-                        logger.critical('Max retries exceeded with Reddit API. Retry.')
-                        raise Exception("Max retries exceeded with Reddit API.")
-                    delay = random.uniform(
-                        0, 
-                        min(
-                            cap_delay, 
-                            base_delay * 2 ** attempt
-                            )
-                        )
-                    logger.warning('Warning: %s encountered on attempt %d, retrying after %ds...', e.__class__.__name__, attempt+1, delay)
+                        logger.critical('Max retries (%d) exceeded with Reddit API: %s', max_retries, e)
+                        raise Exception(f"Max retries ({max_retries}) exceeded with Reddit API: {e}")
+                    delay = random.uniform(0, min(cap_delay, base_delay * 2 ** attempt))
+                    logger.warning('Warning: %s encountered on attempt %d, retrying after %.2f seconds...',
+                                   e.__class__.__name__, attempt+1, delay
+                                   )
                     time.sleep(delay)
                     attempt += 1
         return wrapper
