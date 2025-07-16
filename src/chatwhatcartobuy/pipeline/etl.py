@@ -62,7 +62,7 @@ def main(**stream_kwargs):
     
     # Assign generator to variable, default submission limit = 50
     # Yield: Submissions <= 10*10*50==5000; Comments >= ~5*Submissions 
-    stream = streamer.stream(**stream_kwargs, subreddits=subreddits, queries=queries, progress_bar=True, limit=100)
+    stream = streamer.stream(**stream_kwargs, subreddits=subreddits, queries=queries, progress_bar=True)
     
     # ETL to disk as *.parquet
     loader.load(stream, partition_by_date=True)
