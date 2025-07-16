@@ -152,7 +152,7 @@ class StubTextParser:
 def fake_transform(table):
     """Fake transformation will convert all text data to uppercase."""
     print('FAKE TRANSFORM CALLED')
-    if table.schema.metadata[b'data_source'] == b'submission':
+    if table.schema.metadata[b'record_type'] == b'submission':
         out_table = (table.
                      set_column(
                          table.schema.get_field_index('title'),

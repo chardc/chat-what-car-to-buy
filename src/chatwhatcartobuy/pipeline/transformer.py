@@ -23,7 +23,7 @@ class DataTransformer():
         try:
             # Store current table's schema and record type
             self.current_schema = table.schema
-            self.current_record_type = table.schema.metadata[b'data_source'].decode()
+            self.current_record_type = table.schema.metadata[b'record_type'].decode()
             
             # Simple masking transformations made via pyarrow.compute to reduce rows prior to pandas ops
             # Remove all [deleted] and [removed] text
@@ -93,7 +93,7 @@ class DataTransformer():
         Returns:
             dataframe: Deduplicated Pandas DataFrame.
         """
-        logger.debug('remove_duplicates_from_df called on data_source: %s', self.current_record_type)
+        logger.debug('remove_duplicates_from_df called on record_type: %s', self.current_record_type)
         input_rows = dataframe.shape[0]
         
         if self.current_record_type == 'submission':

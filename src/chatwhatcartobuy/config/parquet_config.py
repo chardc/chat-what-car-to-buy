@@ -28,7 +28,7 @@ def _load_schema(path: Union[str, Path], record_type: str) -> pa.Schema:
             for key, value in schemas.items()}
         return pa.schema(
             [(col, eval(datatype)) for col, datatype in schemas[record_type].items()], 
-            metadata={'data_source':record_type}
+            metadata={'record_type':record_type}
             )
 
 def get_submission_schema(schema_path:Optional[str]=None) -> pa.Schema:
@@ -55,7 +55,7 @@ def get_submission_schema(schema_path:Optional[str]=None) -> pa.Schema:
             ("subreddit", pa.string()),
             ("num_comments", pa.int64())
         ],
-        metadata={'data_source':'submission'}
+        metadata={'record_type':'submission'}
         )
     
 def get_comment_schema(schema_path:Optional[str]=None) -> pa.Schema:
@@ -80,7 +80,7 @@ def get_comment_schema(schema_path:Optional[str]=None) -> pa.Schema:
             ("subreddit", pa.string()),
             ("parent_submission_id", pa.string())
         ],
-        metadata={'data_source':'comment'}
+        metadata={'record_type':'comment'}
         )
 
 def get_parquet_configs(

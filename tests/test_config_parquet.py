@@ -43,7 +43,7 @@ def test_load_submission_schema(mock_valid_path, monkeypatch):
         # Check that all column names were loaded as pa.Schema
         assert set(schema.names) == set(mock_schema['submission'])
         # Check that metadata was inserted
-        assert schema.metadata == {b'data_source':b'submission'}
+        assert schema.metadata == {b'record_type':b'submission'}
         # Check if first column corresponds to a pyarrow field expression for dtype
         assert schema[0] == pa_field('submission_id', pa_string())
     
@@ -53,7 +53,7 @@ def test_load_comment_schema(mock_valid_path, monkeypatch):
     with patch('builtins.open', mock_open(read_data=json.dumps(mock_schema))):
         schema = _load_schema(mock_path, 'comment')
         assert set(schema.names) == set(mock_schema['comment'])
-        assert schema.metadata == {b'data_source':b'comment'}
+        assert schema.metadata == {b'record_type':b'comment'}
         assert schema[0] == pa_field('comment_id', pa_string())
     
 def test_case_insensitive_load(mock_valid_path):
@@ -63,7 +63,7 @@ def test_case_insensitive_load(mock_valid_path):
     with patch('builtins.open', mock_open(read_data=json.dumps(mock_schema))):
         schema = _load_schema(mock_path, 'submission')
         assert schema.names[0] == 'submission_id'
-        assert schema.metadata[b'data_source'] == b'submission'
+        assert schema.metadata[b'record_type'] == b'submission'
 
 def test_load_schema_invalid_path():
     """Test if ValueError raised when file doesn't exist."""
@@ -74,7 +74,7 @@ def test_default_submission_schema():
     """Test default values from get_submission_schema."""
     schema = get_submission_schema()
     assert set(schema.names) == set(mock_schema['submission'])
-    assert schema.metadata == {b'data_source':b'submission'}
+    assert schema.metadata == {b'record_type':b'submission'}
     assert schema[0] == pa_field('submission_id', pa_string())
     
 def test_json_submission_schema(mock_valid_path):
@@ -82,14 +82,14 @@ def test_json_submission_schema(mock_valid_path):
     mock_path = mock_valid_path
     with patch('builtins.open', mock_open(read_data=json.dumps(mock_schema))):
         schema = get_submission_schema(mock_path)
-        assert schema.metadata == {b'data_source':b'submission'}
+        assert schema.metadata == {b'record_type':b'submission'}
         assert schema[0] == pa_field('submission_id', pa_string())
 
 def test_default_comment_schema():
     """Test default values from get_comment_schema."""
     schema = get_comment_schema()
     assert set(schema.names) == set(mock_schema['comment'])
-    assert schema.metadata == {b'data_source':b'comment'}
+    assert schema.metadata == {b'record_type':b'comment'}
     assert schema[0] == pa_field('comment_id', pa_string())
 
 def test_json_comment_schema(mock_valid_path):
@@ -97,7 +97,7 @@ def test_json_comment_schema(mock_valid_path):
     mock_path = mock_valid_path
     with patch('builtins.open', mock_open(read_data=json.dumps(mock_schema))):
         schema = get_comment_schema(mock_path)
-        assert schema.metadata == {b'data_source':b'comment'}
+        assert schema.metadata == {b'record_type':b'comment'}
         assert schema[0] == pa_field('comment_id', pa_string())
         
 def test_invalid_dtype(mock_valid_path):
