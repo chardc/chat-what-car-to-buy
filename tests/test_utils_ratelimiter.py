@@ -1,6 +1,6 @@
 from prawcore import OAuthException
-from usedcaranalytics.utils.ratelimiter import RateLimiter, backoff_on_rate_limit
-from unittest.mock import MagicMock, patch
+from usedcaranalytics.utils.ratelimiter import RateLimiter
+from unittest.mock import MagicMock
 from collections import deque
 import pytest
 

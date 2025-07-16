@@ -14,7 +14,7 @@ def mock_get_parquet_configs(tmp_path_factory):
         ("comment_id", pa.string()),
         ("body", pa.string())
         ])
-    temp_dir = tmp_path_factory.mktemp('test_loader') / 'data/processed'
+    temp_dir = tmp_path_factory.mktemp('test_loader') / 'data/raw'
     sub_cfg = ParquetConfig('submission', temp_dir / 'submission-dataset', submission_schema)
     com_cfg = ParquetConfig('comment', temp_dir / 'comment-dataset', comment_schema)
     return (sub_cfg, com_cfg)

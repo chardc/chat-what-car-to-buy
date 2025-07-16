@@ -25,10 +25,10 @@ def main(**stream_kwargs):
         progress bars.
         
     Notes:
-        Writes *.parquet files to project_root/data/processed/**-dataset directories.
+        Writes *.parquet files to project_root/data/raw/**-dataset directories.
     """
-    # Setup logger
-    setup_logging(level=logging.DEBUG, output_to_file=True)
+    # Setup logger with file handler
+    setup_logging(level=logging.INFO, file_prefix='etl-pipeline', output_to_file=True)
     
     # Run config scripts; generate loader config 
     PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME = load_env()
@@ -37,8 +37,7 @@ def main(**stream_kwargs):
     # Save the data to root/data/raw/**-dataset
     try:
         loader_config = get_parquet_configs(
-            subdir='raw',
-            schema_path=get_path(start_path=__file__, target='schemas.json')
+            schema_path=get_path(start_path=__file__, target='schemas.json', subdir='config')
             )
     except:
         loader_config = get_parquet_configs()
@@ -55,18 +54,18 @@ def main(**stream_kwargs):
     # Initialize the ETL objects
     streamer = DataStreamer(reddit)
     transformer = DataTransformer()
-    loader = ParquetDataLoader(loader_config, target_MB=32, transformer=transformer) # Smaller target MB for frequent writes
+    loader = ParquetDataLoader(loader_config, target_MB=128, transformer=transformer)
     
     # Get the list of subreddits and queries
-    subreddits = txt_to_list(target_file='subreddits.txt', subdir='data/raw')
-    queries = txt_to_list(target_file='search_queries.txt', subdir='data/raw')
+    subreddits = txt_to_list(target_file='subreddits.txt', subdir='data/queries')
+    queries = txt_to_list(target_file='search_queries.txt', subdir='data/queries')
     
     # Assign generator to variable, default submission limit = 50
     # Yield: Submissions <= 10*10*50==5000; Comments >= ~5*Submissions 
-    stream = streamer.stream(**stream_kwargs, subreddits=subreddits, queries=queries, progress_bar=True)
+    stream = streamer.stream(**stream_kwargs, subreddits=subreddits, queries=queries, progress_bar=True, limit=100)
     
     # ETL to disk as *.parquet
-    loader.load(stream)
+    loader.load(stream, partition_by_date=True)
     
 if __name__ == "__main__":
     main()

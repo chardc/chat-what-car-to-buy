@@ -1,5 +1,6 @@
 import pytest
 import pandas as pd
+import datetime as dt
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from dataclasses import dataclass
@@ -203,11 +204,15 @@ def test_main(
     # Run main script
     main()
     
+    # Since parquet files are written to subdir named by date of data ingestion
     sub_cfg, com_cfg = stub_parquet_cfg.return_value
+    sub_dataset_path = sub_cfg.dataset_path / f'{dt.datetime.now():%Y-%m-%d}'
+    com_dataset_path = com_cfg.dataset_path / f'{dt.datetime.now():%Y-%m-%d}'
     
-    print(f'LOOKING FOR PARQUET FILES IN\n{sub_cfg.dataset_path}\n{com_cfg.dataset_path}')
-    submission_pqt = list(sub_cfg.dataset_path.glob('*.parquet'))
-    comment_pqt = list(com_cfg.dataset_path.glob('*.parquet'))
+    # print(f'LOOKING FOR PARQUET FILES IN\n{sub_dataset_path}\n{com_dataset_path}')
+    
+    submission_pqt = list(sub_dataset_path.glob('*.parquet'))
+    comment_pqt = list(com_dataset_path.glob('*.parquet'))
     
     # Assert that new files were created
     assert submission_pqt

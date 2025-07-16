@@ -115,7 +115,7 @@ class ParquetDataLoader:
         logger.info("Updating target buffer size to %d MB (%d bytes)", target_MB, self._target_bytes)
         return self
     
-    def load(self, data_stream:Generator):
+    def load(self, data_stream:Generator, partition_by_date: bool=False):
         """
         Streams data ("record type", record_dict) from an input generator, stores the 
         data into a dictionary buffer, and writes to disk when a target byte size or 
@@ -125,12 +125,21 @@ class ParquetDataLoader:
             data_stream: Generator of submission and comment data. Use either 
             DataStreamer.stream() or DataStreamer.stream_search_results() for multi-
             subreddit multi-query or single subreddit query, respectively.
+            partition_by_date: If True, scraped data will be stored in a subdir within dataset
+            based on date when etl script was run.
         
         Notes:
             *.parquet files written to specified dataset directories in repo root.
             Default = UsedCarAnalytics/data/processed/**-dataset/**.parquet
         """ 
         logger.info('Starting to load data from stream...')
+        
+        if partition_by_date:
+            # Add subdir to current dataset path to partition by date of scraping
+            self._dataset_paths = {record_type: path / f'{dt.datetime.now():%Y-%m-%d}' 
+                                   for record_type, path in self._dataset_paths.items()
+                                   }
+        
         try:
             # Stream the data, append to buffer, track buffer size, and when target buffer size
             # is met, write the record batch to disk and flush the buffer

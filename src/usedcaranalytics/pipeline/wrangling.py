@@ -11,6 +11,7 @@ of all parquet files into singular dataset, deduplication of dataset, text clean
 basic record masking (e.g. filtering out low scores or non-token text records).
 """
 import logging
+import datetime as dt
 import pandas as pd
 import pyarrow.parquet as pq
 from typing import Hashable, List, Literal
@@ -195,12 +196,13 @@ def wrangle_dataset(dataset):
     logger.info('Finished preprocessing %s dataset.', data_source) 
     return out_df
 
-def pandas_to_parquet(df, data_source: Literal['comments', 'submissions'], dir_path=None):
+def pandas_to_parquet(df, data_source: Literal['comments', 'submissions'], dir_path=None, partition_by_date:bool=False):
     """
     Args:
         df: Pandas DataFrame.
         data_source: Specify either 'comments' or 'submissions'
         dir_path: Path of directory where parquet will be stored. Default is 'data/processed' when None.
+        partition_by_date: If True, output file will be saved to 'dir_path/current_date'. 
     
     Notes:
         Export pandas dataframe to parquet.
@@ -210,6 +212,13 @@ def pandas_to_parquet(df, data_source: Literal['comments', 'submissions'], dir_p
     
     if dir_path is None:
         dir_path = get_repo_root() / 'data/processed'
+        
+    if partition_by_date:
+        logger.debug('Partition by date set to True. Modifying target directory path.')
+        dir_path = dir_path / f'{dt.datetime.now():%Y-%m-%d}'
+    
+    # Create directory if necessary
+    dir_path.mkdir(parents=True, exist_ok=True)
     
     logger.debug('Exporting %s to disk path: %s', data_source, dir_path / f'{data_source}.parquet')
     

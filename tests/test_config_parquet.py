@@ -117,8 +117,8 @@ def test_get_default_configs():
     assert submission_config.record_type == 'submission'
     assert comment_config.record_type == 'comment'
     # Check if dataset paths are correct
-    assert submission_config.dataset_path == root / 'data/processed' / 'submission-dataset'
-    assert comment_config.dataset_path == root / 'data/processed' / 'comment-dataset'
+    assert submission_config.dataset_path == root / 'data/raw' / 'submission-dataset'
+    assert comment_config.dataset_path == root / 'data/raw' / 'comment-dataset'
     # Check if schemas are correct
     assert submission_config.schema == get_submission_schema()
     assert comment_config.schema == get_comment_schema()
