@@ -1,3 +1,14 @@
+"""
+This test script requires a directory 'test-data/' inside the 'tests/' directory. It should
+have 2 parquet files named 'sample-comments.parquet' and 'sample-submissions.parquet', which
+will be the basis of the unittest. These parquet files can be simulated by creating custom
+dataframes with columns based on the streamed submission and comment records, and then exporting
+to parquet using engine='pyarrow'. 
+
+Alternatively, you can run the etl.py script by setting limit=<low number> and use the exported
+parquet files as the data for the fake stream in this unit test.
+"""
+
 import pytest
 import pandas as pd
 import datetime as dt
