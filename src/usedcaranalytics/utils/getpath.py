@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Callable, Optional, Union, Tuple
 
 # Full recursion implementation
 def get_path(start_path: Union[str, Path], target: str, subdir: Optional[str]=None):
@@ -48,10 +48,7 @@ def get_path(start_path: Union[str, Path], target: str, subdir: Optional[str]=No
     # Otherwise, move up to parent and repeat search
     return get_path(current_path.parent, target, subdir)
 
-def get_repo_root(
-    start_path: Union[str, Path]=__file__, 
-    sentinels: Tuple[str]=('.git','pyproject.toml','setup.py','README.md')
-    ):
+def get_repo_root(start_path: Union[str, Path]=__file__, sentinels: Tuple[str]=('.git','pyproject.toml','setup.py','README.md')):
     """
     Wrapper for get_path configured to always return project root by determining parent
     path of any of the sentinel files usually contained directly in root directory.
@@ -72,44 +69,30 @@ def get_repo_root(
     # If interpreter reaches here, then raise an error
     raise RuntimeError('Project root not found due to missing markers. Retry with updated markers.')
     
-# # Recursive iteration implementation, only works when target file provided 
-# # and in immediate parent. Else, requires a subdir to work
-# def get_path(start_path: Path, target_file: str, subdir: str=None):
-#     """
-#     Recursive search for a given file and returns the absolute path.
-#     Args:
-#         - start_path: PosixPath object. If run in main.py, arg == Path(__file__).
-#         - target_file: Name of target file (e.g. ".env", "subreddits.txt").
-#         - subdir: Name of directory containing the file (e.g. "config").
-#     Returns:
-#         - Absolute path of target file as PosixPath object.
-#     """
-#     if subdir is None:
-#         subdir = ''
+def get_latest_path(search_pat: str):
+    """
+    Returns the path of the latest file or directory inside the target directory.
     
-#     if target_file is None:
-#         target_file = ''
+    Args:
+        search_pat: PosixPath pattern for the container directory / file itself.
+        
+    Returns:
+        latest_fp: Path of the latest directory or file within the search directory.
+    """
+    # Return only the first element (i.e. latest path)
+    paths = list(get_repo_root().rglob(search_pat))
+    return sorted(paths, key=lambda path: path.stat().st_mtime, reverse=True)[0]
+
+def get_earliest_path(search_pat: str):
+    """
+    Returns the path of the earliest file or directory inside the target directory.
     
-#     # Convert to absolute path
-#     current_path = start_path.resolve()
-    
-#     # Base case: If .env in current path, return
-#     target_path = current_path / target_file
-#     if target_path.exists():
-#         return target_path
-    
-#     # If config directory exists in parent path, search within config
-#     for parent in [current_path, *current_path.parents]:
-#         # Handle infinite recursion when file not found in subdir
-#         if current_path == parent.parent / subdir:
-#             subdir = current_path
-#             break
-#         subdir_path = parent / subdir
-#         if subdir_path.exists():
-#             return get_path(subdir_path, target_file, subdir)
-    
-#     # Handle infinite recursion for when all parent paths exhausted
-#     raise RuntimeError(
-#         f'"{target_file}" file not found.{f' in "{subdir}"' if subdir else ''}\n'
-#         f'Ensure {target_file} is stored in project repo and inside specified sub-directory.'
-#         )  
+    Args:
+        search_pat: PosixPath pattern for the container directory / file itself.
+        
+    Returns:
+        earliest_fp: Path of the earliest directory or file within the search directory.
+    """
+    # Return only the last element (i.e. latest path)
+    paths = list(get_repo_root().rglob(target_pat))
+    return sorted(paths, key=lambda path: path.stat().st_mtime)[0]
