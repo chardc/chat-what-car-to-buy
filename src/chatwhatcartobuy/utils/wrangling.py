@@ -154,6 +154,20 @@ def lowercase_text_pandas(df, cols: list[str]):
                            )
     return out_df
 
+def assign_data_source_pandas(df, data_source):
+    """
+    Assigns a new column to the current dataframe containing the data source
+    from the pyarrow schema metadata. Useful for filtering records downstream.
+    
+    Args:
+        df: Pandas DataFrame.
+        data_source: 'submission' or 'comment' from the schema metadata.
+    
+    Returns:
+        df: Copy of original dataframe with assigned data_source column.
+    """
+    return df.assign(data_source=data_source)
+
 def wrangle_dataset(dataset):
     """
     Perform data cleaning and wrangling on an input PyArrow dataset.
