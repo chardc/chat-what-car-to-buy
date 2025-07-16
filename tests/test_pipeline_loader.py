@@ -19,16 +19,14 @@ def mock_get_parquet_configs(tmp_path_factory):
     com_cfg = ParquetConfig('comment', temp_dir / 'comment-dataset', comment_schema)
     return (sub_cfg, com_cfg)
 
-@patch('usedcaranalytics.pipeline.loader.logger')
-def test_initialization(mock_logger, mock_get_parquet_configs):
+def test_initialization(mock_get_parquet_configs):
     """Test ParquetDataLoader constructor."""
     def simple_transform(table): return table
     fake_loader = ParquetDataLoader(mock_get_parquet_configs, transformer=simple_transform)
     assert fake_loader.config == mock_get_parquet_configs
     assert callable(fake_loader._transformer)
 
-@patch('usedcaranalytics.pipeline.loader.logger')
-def test_init_invalid_config(mock_logger, mock_get_parquet_configs):
+def test_init_invalid_config(mock_get_parquet_configs):
     """Test exceptions raised for invalid config"""
     sub_cfg, _ = mock_get_parquet_configs
     # Single namedtuple instead of two
@@ -47,8 +45,7 @@ def test_init_invalid_config(mock_logger, mock_get_parquet_configs):
     with pytest.raises(TypeError):
         ParquetDataLoader(mock_get_parquet_configs, target_MB='invalid') 
 
-@patch('usedcaranalytics.pipeline.loader.logger')
-def test_configure_loader(mock_logger, mock_get_parquet_configs):
+def test_configure_loader(mock_get_parquet_configs):
     """Test if named values from config tuple are loaded as instance vars."""
     loader = ParquetDataLoader(mock_get_parquet_configs)
     assert loader._schemas == {
@@ -66,8 +63,7 @@ def test_configure_loader(mock_logger, mock_get_parquet_configs):
     assert loader._buffer_sizes == {'submission': 0, 'comment': 0}
     assert loader._batch_counters == {'submission': 0, 'comment': 0}
 
-@patch('usedcaranalytics.pipeline.loader.logger')
-def test_set_target_mb(mock_logger, mock_get_parquet_configs):
+def test_set_target_mb(mock_get_parquet_configs):
     """Test if target_MB setter works and if the _target_bytes is automatically set."""
     # Check if it works on initialization
     fake_loader = ParquetDataLoader(mock_get_parquet_configs, target_MB=16)
@@ -77,9 +73,8 @@ def test_set_target_mb(mock_logger, mock_get_parquet_configs):
     assert fake_loader.target_MB == 32.5
     assert fake_loader._target_bytes == int(32.5 * 2**20)
 
-@patch('usedcaranalytics.pipeline.loader.logger')
 @patch('usedcaranalytics.pipeline.loader.ParquetDataLoader._flush')
-def test_load(stubbed_flush, mock_logging, mock_get_parquet_configs):
+def test_load(stubbed_flush, mock_get_parquet_configs):
     """Test loading logic with mocked data_stream."""
     # Get temporary dataset paths
     sub_cfg, com_cfg = mock_get_parquet_configs
@@ -108,8 +103,7 @@ def test_load(stubbed_flush, mock_logging, mock_get_parquet_configs):
     assert len(list(com_path.glob('*.parquet'))) >= 3
 
 # Pytest tmp_path fixture creates a temp directory to simulate disk write
-@patch('usedcaranalytics.pipeline.loader.logger')
-def test_write(mock_logging, tmp_path, mock_get_parquet_configs):
+def test_write(tmp_path, mock_get_parquet_configs):
     """Test _write method with temporary path."""
     loader = ParquetDataLoader(mock_get_parquet_configs)
     loader._dataset_paths['submission'] = tmp_path
@@ -123,8 +117,7 @@ def test_write(mock_logging, tmp_path, mock_get_parquet_configs):
     assert read_table.column('submission_id').to_pylist() == ['sid1']
     assert read_table.column('title').to_pylist() == ['t1']
 
-@patch('usedcaranalytics.pipeline.loader.logger')
-def test_flush(mock_logging):
+def test_flush():
     """Test buffer flushing method."""
     # Create a buffer and ensure it returns a tuple (dict of empty lists, 0)
     buffer = {'col1': [1, 2], 'col2': ['a', 'b']}

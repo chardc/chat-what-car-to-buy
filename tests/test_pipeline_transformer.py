@@ -1,6 +1,7 @@
 import pytest
 import pyarrow as pa
 from usedcaranalytics.pipeline.transformer import DataTransformer
+from unittest.mock import patch
 
 @pytest.fixture
 def mock_submission_table():

@@ -4,8 +4,7 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 from dataclasses import dataclass
 from usedcaranalytics.pipeline.etl import main, get_parquet_configs
-from usedcaranalytics.pipeline.transformer import DataTransformer
-import pyarrow as pa, pyarrow.compute as pc
+import pyarrow.compute as pc
 
 @dataclass
 class Submission:
@@ -161,19 +160,18 @@ def fake_transform(table):
                      )
     return out_table
 
-# @patch('usedcaranalytics.pipeline.streamer.logger')
-# @patch('usedcaranalytics.pipeline.transformer.logger')
-# @patch('usedcaranalytics.pipeline.loader.logger')
-@patch('usedcaranalytics.pipeline.main.DataTransformer')
-@patch('usedcaranalytics.pipeline.main.txt_to_list')
+# Remove log file creation
+@patch('usedcaranalytics.pipeline.etl.setup_logging')
+@patch('usedcaranalytics.pipeline.etl.DataTransformer')
+@patch('usedcaranalytics.pipeline.etl.txt_to_list')
 @patch('usedcaranalytics.pipeline.streamer.RateLimiter')
-@patch('usedcaranalytics.pipeline.main.get_parquet_configs')
-@patch('usedcaranalytics.pipeline.main.load_env')
-@patch('usedcaranalytics.pipeline.main.Reddit')
+@patch('usedcaranalytics.pipeline.etl.get_parquet_configs')
+@patch('usedcaranalytics.pipeline.etl.load_env')
+@patch('usedcaranalytics.pipeline.etl.Reddit')
 def test_main(
     mock_reddit, stub_load_env, stub_parquet_cfg, 
     fake_ratelimiter, stub_txt_to_list, 
-    mock_transformer, tmp_path_factory
+    mock_transformer, stub_setup_logging, tmp_path_factory
     ):
     """Integration test for the ETL pipeline script."""
     # Patch dependencies
