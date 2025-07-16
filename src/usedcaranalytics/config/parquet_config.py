@@ -85,7 +85,7 @@ def get_comment_schema(schema_path:Optional[str]=None) -> pa.Schema:
 
 def get_parquet_configs(
     root: Union[str, Path]=None, 
-    subdir: Union[str, Path]=None, 
+    subdir: Union[str, Path]='data/raw', 
     dataset_dirs: Union[Tuple[str, str], List[str]]=('submission-dataset','comment-dataset'),
     **schema_kwargs
     ):
@@ -94,7 +94,7 @@ def get_parquet_configs(
     datasets respectively.
     Args:
         - Root path for repo
-        - Data subdirectory path (default = data/processed).
+        - Data subdirectory path (default = data/raw).
         - Dataset directory names in order: 1) submission dataset, 2) comment dataset 
         (default = ('submission-dataset','comment-dataset')).
     Returns:
@@ -102,14 +102,14 @@ def get_parquet_configs(
         schema attribtues
     """
     
-    # Default root/subdir path: UsedCarAnalytics/data/processed
+    # Default root/subdir path: UsedCarAnalytics/data/raw
     if root is None:
         root = get_repo_root()
     elif isinstance(root, str):
         root = Path(root)
     
     if subdir is None:
-        subdir = Path('data') / 'processed'
+        subdir = Path('data') / 'raw'
     if isinstance(subdir, str):
         subdir = Path(subdir)
     
@@ -119,10 +119,7 @@ def get_parquet_configs(
         raise ValueError("dataset_dirs must be a tuple or list of 2 directory names for submission and comment data, respectively.")
     
     # Build paths for submission dataset and comment dataset directories
-    sub_path, com_path = tuple(
-        root / subdir / dataset_dir
-        for dataset_dir in dataset_dirs
-    )
+    sub_path, com_path = tuple(root / subdir / dataset_dir for dataset_dir in dataset_dirs)
     
     # Get the submission and content data Arrow & Parquet schemas
     sub_schema = get_submission_schema(**schema_kwargs)
