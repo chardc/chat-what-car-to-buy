@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 
 import logging
-from dotenv import load_dotenv
 from praw import Reddit
 from usedcaranalytics.pipeline.streamer import DataStreamer
 from usedcaranalytics.pipeline.transformer import DataTransformer
