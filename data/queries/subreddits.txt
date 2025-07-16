@@ -1,4 +1,4 @@
-# Core used-car and regional communities
+# Core used-car and regional communities with substantial following
 CarsAustralia
 UsedCars
 whatcarshouldIbuy
@@ -6,13 +6,6 @@ askcarsales
 askcarguys
 cars
 Cartalk
+CarTalkUK
 CarAdvice
-firstcar
-
-# Model-specific subreddits (popular & active)
-ToyotaCorolla
-HondaCivic
-Mazda3
-SubaruOutback
-ToyotaCamry
-HondaAccord
+FirstCar
