@@ -51,12 +51,8 @@ def main():
     comment_docs = chunks_from_pandas(comments)
     
     # Create the vector stores
-    vector_store_context = FAISS.from_documents(submission_docs, emb_model)
-    vector_store_comment = FAISS.from_documents(comment_docs, emb_model)
-    
-    # Save vector_store to current working directory
-    vector_store_context.save_local(__file__.parent())
-    
+    raise NotImplementedError('Vector stores to be implemented')
+
 if __name__ == '__main__':
     setup_logging(level=logging.DEBUG, output_to_console=True)
     main()
