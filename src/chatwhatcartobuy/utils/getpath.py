@@ -94,5 +94,5 @@ def get_earliest_path(search_pat: str):
         earliest_fp: Path of the earliest directory or file within the search directory.
     """
     # Return only the last element (i.e. latest path)
-    paths = list(get_repo_root().rglob(target_pat))
+    paths = list(get_repo_root().rglob(search_pat))
     return sorted(paths, key=lambda path: path.stat().st_mtime)[0]
