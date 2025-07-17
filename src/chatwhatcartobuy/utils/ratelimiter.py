@@ -73,7 +73,7 @@ class RateLimiter:
                 reset_time = self.requests_in_window[0] + self.PERIOD
             
             delay = max(reset_time - time.time(), 0)
-            delay += random.randrange(0.01, 5.0)
+            delay += random.uniform(0.01, 5.0)
             logger.debug('Sleeping for %d seconds...', delay)
             time.sleep(delay)
             
