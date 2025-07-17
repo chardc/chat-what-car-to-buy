@@ -19,3 +19,6 @@
 
 # All parquet files
 *.parquet
+
+# Chromadb
+**/chromadb
