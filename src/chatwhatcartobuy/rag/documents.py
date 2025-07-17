@@ -1,8 +1,11 @@
 import re
 import logging
 import pandas as pd
-from typing import Optional
-from chatwhatcartobuy.utils.getpath import get_repo_root
+from pathlib import Path
+from typing import Optional, List
+from chatwhatcartobuy.utils.wrangling import read_dataset, wrangle_dataset, pandas_to_parquet
+from chatwhatcartobuy.config.logging_config import setup_logging
+from chatwhatcartobuy.utils.getpath import get_latest_path
 from langchain_text_splitters import TokenTextSplitter
 from langchain_core.documents import Document
 
@@ -27,8 +30,14 @@ def chunks_from_pandas(df, chunk_size: int=256, chunk_overlap: int=0, **kwargs):
     
     # Retain original metadata from dataframe
     logger.debug('Building metadata from dataframe with columns: %s', ', '.join(df.columns))
-    metadatas = [{col: record[col] for col in record.index if col != 'document'}
-                 for _, record in df.iterrows()]
+    
+    metadatas = []
+    for _, record in df.iterrows():
+        # Remove "document" from metadata and convert timestamp to unix seconds
+        metadata = record.to_dict()
+        metadata['timestamp'] = metadata['timestamp'].timestamp()
+        metadata.pop('document')
+        metadatas.append(metadata)
     
     # Generate langchain Docs in specified chunks 
     docs = text_splitter.create_documents(df.document, metadatas=metadatas)
@@ -51,11 +60,14 @@ def documents_from_pandas(df, text_col: str='document', include_metadata: bool=F
         logger.debug('Building metadata from dataframe with columns: %s', ', '.join(df.columns))
         docs = []
         for _, record in df.iterrows():
-            metadata = {col: record[col] for col in record.index if col != text_col}
+            # Remove "document" from metadata and convert timestamp to unix seconds
+            metadata = record.to_dict()
+            metadata['timestamp'] = metadata['timestamp'].timestamp()
+            metadata.pop('document')
             docs.append(Document(page_content=record[text_col], metadata=metadata))
-        return docs
+    else:
+        docs = [Document(page_content=text) for text in df.loc[:, text_col]]
     
-    docs = [Document(page_content=text) for text in df.loc[:, text_col]]
     logger.debug('Returning %d documents from source dataframe with %d rows', len(docs), len(df))
     return docs
         
@@ -94,3 +106,60 @@ def generate_document_ids(docs):
     logger.debug('Successfully generated %d unique IDs from %d documents.', len(ids), len(docs))
     
     return ids
+
+def preprocess_raw_parquet(path_or_paths: List[Path] | Path):
+    """""
+    Wrangle raw parquet files exported from the Reddit API to Local ETL pipeline.
+    
+    Args:
+        path_or_paths: List of parquet file Paths or Path to dataset directory.
+    
+    Returns:
+        df: Preprocessed dataframe    
+    """
+    try:
+        # Parse multiple parquet files into a dataset
+        logger.debug('Parsing parquet files from: %s', path_or_paths)
+        # Merge all parquet files into a dataset
+        dataset = read_dataset(path_or_paths)
+        # Wrangle pyarrow dataset and return a pandas dataframe
+        df = wrangle_dataset(dataset)
+        return df
+    
+    except Exception as e:
+        logger.critical('Error encountered: %s', e)
+        raise e
+
+def get_documents_and_ids(df: Optional[pd.DataFrame]=None, file_path: Optional[str]=None):
+    """
+    Takes either a preprocessed dataframe or parquet filepath and returns a tuple of 
+    langchain Documents and unique document IDs. DataFrame must contain a 'document'
+    column, as well as respective id columns. Only takes keyword arguments.
+    
+    Args:
+        df: Preprocessed dataframe.
+        file_path: PosixPath to preprocessed dataframe.
+        
+    Returns:
+        tuple: Tuple of documents and document ids.
+    """
+    if file_path:
+        logger.debug('Parsing parquet file from path: %s', file_path)
+        df = pd.read_parquet(file_path, engine='pyarrow')
+    docs = chunks_from_pandas(df)
+    doc_ids = generate_document_ids(docs)
+    return (docs, doc_ids)
+
+if __name__ == '__main__':
+    """
+    If this script is run, the raw datasets will be parsed, preprocessed, and saved to disk
+    path: project_root/data/processed/partition/.
+    """
+    setup_logging(level=logging.INFO, output_to_console=True)
+    logger.info('Preprocessing raw datasets for document generation.')
+    # Preprocess raw datasets
+    submissions = preprocess_raw_parquet(get_latest_path('raw/submission-dataset/*/'))
+    comments = preprocess_raw_parquet(get_latest_path('raw/comment-dataset/*/'))
+    # Optional: Save to disk
+    pandas_to_parquet(submissions, file_name='submissions.parquet', partition_by_date=True)
+    pandas_to_parquet(comments, file_name='comments.parquet', partition_by_date=True)
