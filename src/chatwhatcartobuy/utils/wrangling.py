@@ -10,6 +10,7 @@ whitespaces). This module intends to provide helper functions that handle the me
 of all parquet files into singular dataset, deduplication of dataset, text cleaning and
 basic record masking (e.g. filtering out low scores or non-token text records).
 """
+import re
 import logging
 import datetime as dt
 import pandas as pd
@@ -30,6 +31,7 @@ def read_dataset(path, **kwargs):
     Returns:
         dataset: pyarrow.parquet ParquetDataset.
     """
+    logger.debug('Parsing parquet files as PyArrow ParquetDataset. Source path: %s', path)
     dataset = pq.ParquetDataset(path, **kwargs)
     return dataset
 
@@ -154,19 +156,42 @@ def lowercase_text_pandas(df, cols: list[str]):
                            )
     return out_df
 
-def assign_data_source_pandas(df, data_source):
+def assign_record_type_pandas(df, record_type):
     """
     Assigns a new column to the current dataframe containing the data source
     from the pyarrow schema metadata. Useful for filtering records downstream.
     
     Args:
         df: Pandas DataFrame.
-        data_source: 'submission' or 'comment' from the schema metadata.
+        record_type: 'submission' or 'comment' from the schema metadata.
     
     Returns:
-        df: Copy of original dataframe with assigned data_source column.
+        df: Copy of original dataframe with assigned record_type column.
     """
-    return df.assign(data_source=data_source)
+    logger.debug('Assigning record_type column for %s', record_type)
+    return df.assign(record_type=record_type)
+
+def drop_and_rename_text_cols(df):
+    """
+    Drop all other text columns and assign values to a new 'document' column.
+    
+    Args:
+        df: Pandas DataFrame.
+    
+    Returns:
+        df: DataFrame with assigned 'document' column.
+    """
+    if 'title' in df.columns and 'selftext' in df.columns:
+        logger.debug('Dropping "selftext" and renaming "title" to "document" in submission dataframe.')
+        out_df = df.drop(columns=['selftext']).rename(columns={'title': 'document'})
+        
+        logger.debug('Replacing values in "document" column with merged submission title and selftext.')
+        out_df.loc[:, 'document'] = (df.title + ' ' + df.selftext).values
+        return out_df
+    
+    elif 'body' in df.columns:
+        logger.debug('Renaming "body" to "document" in comment dataframe.')
+        return df.rename(columns={'parent_submission_id': 'submission_id', 'body': 'document'})
 
 def wrangle_dataset(dataset):
     """
@@ -179,62 +204,67 @@ def wrangle_dataset(dataset):
         dataframe: Cleaned and wrangled Pandas DataFrame.
     """
     # Either submission or comment; Get primary keys and columns containing text
-    data_source = dataset.schema.metadata[b'data_source'].decode()
-    subset = 'submission_id' if data_source == 'submission' else 'comment_id'
-    cols = ['title', 'selftext'] if data_source == 'submission' else ['body']
+    record_type = dataset.schema.metadata[b'record_type'].decode()
+    subset = 'submission_id' if record_type == 'submission' else 'comment_id'
+    cols = ['title', 'selftext'] if record_type == 'submission' else ['body']
     
     # Convert dataset to pandas for in-memory transformations
     logger.debug('Converting ParquetDataset to Pandas DataFrame.')
     out_df = dataset_to_pandas(dataset)
 
     # Deduplication based on column subset
-    logger.debug('Deduplicating %s dataframe.', data_source)
+    logger.debug('Deduplicating %s dataframe.', record_type)
     out_df = deduplicate_pandas(out_df, subset)
 
     # Remove empty records (records without valid tokens)
-    logger.debug('Removing empty rows from %s dataframe.', data_source)
+    logger.debug('Removing empty rows from %s dataframe.', record_type)
     out_df = remove_empty_rows_pandas(out_df, cols)
     
     # Filter unreliable / low-score comments and posts
-    logger.debug('Removing low score records from %s dataframe.', data_source)
+    logger.debug('Removing low score records from %s dataframe.', record_type)
     out_df = remove_low_score_pandas(out_df, threshold=-2)
     
     # Pad URLs with context tags <URL>
-    logger.debug('Padding URLs in %s from %s dataframe.', ', '.join(cols), data_source)
+    logger.debug('Padding URLs in %s from %s dataframe.', ', '.join(cols), record_type)
     out_df = replace_url_pandas(out_df, cols)
     
     # Remove extra whitespaces
-    logger.debug('Removing extra whitespaces from %s dataframe.', data_source)
+    logger.debug('Removing extra whitespaces from %s dataframe.', record_type)
     out_df = remove_extra_whitespace_pandas(out_df, cols)
     
-    logger.info('Finished preprocessing %s dataset.', data_source) 
+    # Retain only 'document' column for all text data
+    out_df = drop_and_rename_text_cols(out_df)
+    
+    logger.info('Finished preprocessing %s dataset.', record_type) 
     return out_df
 
-def pandas_to_parquet(df, data_source: Literal['comments', 'submissions'], dir_path=None, partition_by_date:bool=False):
+def pandas_to_parquet(df, file_name: str, dir_path=None, partition_by_date:bool=False):
     """
     Args:
         df: Pandas DataFrame.
-        data_source: Specify either 'comments' or 'submissions'
+        file_name: Specify either 'comments' or 'submissions'
         dir_path: Path of directory where parquet will be stored. Default is 'data/processed' when None.
         partition_by_date: If True, output file will be saved to 'dir_path/current_date'. 
     
     Notes:
         Export pandas dataframe to parquet.
     """
-    if data_source not in ['comments', 'submissions']:
-        raise ValueError('Data source can only be either "comments" or "submissions".')
+    # Append .parquet to file_name if it doesn't have extension
+    if not re.match(r'\w+\.parquet$', file_name):
+        file_name += '.parquet'
     
     if dir_path is None:
         dir_path = get_repo_root() / 'data/processed'
         
     if partition_by_date:
         logger.debug('Partition by date set to True. Modifying target directory path.')
-        dir_path = dir_path / f'{dt.datetime.now():%Y-%m-%d}'
+        dir_path /= f'{dt.datetime.now():%Y-%m-%d}'
     
     # Create directory if necessary
     dir_path.mkdir(parents=True, exist_ok=True)
+    file_path = dir_path / file_name
     
-    logger.debug('Exporting %s to disk path: %s', data_source, dir_path / f'{data_source}.parquet')
+    logger.debug('Exporting %s to path: %s', file_name, file_path)
     
-    df.to_parquet(dir_path / f'{data_source}.parquet', engine='pyarrow')
+    df.to_parquet(file_path, engine='pyarrow')
     logger.info('Finished exporting preprocessed Reddit post and comment data to %s', dir_path)
