@@ -71,7 +71,7 @@ def test_evaluate_sleep(mock_reddit, monkeypatch):
     # Patches delay as 1 + 600 - 1 + 0.01 = 600.01; 
     rate_limiter.requests_in_window = [1]
     monkeypatch.setattr("time.time", lambda: 1)
-    monkeypatch.setattr("random.randrange", lambda *args: 0.01)
+    monkeypatch.setattr("random.uniform", lambda *args: 0.01)
     
     # Test if sleep called when dipping into buffer, mocking when 
     # auth.limits has no reset timestamp
