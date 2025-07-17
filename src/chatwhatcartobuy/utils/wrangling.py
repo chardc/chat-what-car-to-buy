@@ -10,6 +10,7 @@ whitespaces). This module intends to provide helper functions that handle the me
 of all parquet files into singular dataset, deduplication of dataset, text cleaning and
 basic record masking (e.g. filtering out low scores or non-token text records).
 """
+
 import re
 import logging
 import datetime as dt
@@ -20,7 +21,7 @@ from chatwhatcartobuy.utils.getpath import get_repo_root
 
 logger = logging.getLogger(__name__)
 
-def read_dataset(path, **kwargs):
+def read_dataset(path_or_paths, **kwargs):
     """
     Parses multiple *.parquet files into a single dataset.
     
@@ -31,8 +32,8 @@ def read_dataset(path, **kwargs):
     Returns:
         dataset: pyarrow.parquet ParquetDataset.
     """
-    logger.debug('Parsing parquet files as PyArrow ParquetDataset. Source path: %s', path)
-    dataset = pq.ParquetDataset(path, **kwargs)
+    logger.debug('Parsing parquet files as PyArrow ParquetDataset. Source path(s): %s', path_or_paths)
+    dataset = pq.ParquetDataset(path_or_paths, **kwargs)
     return dataset
 
 def dataset_to_pandas(dataset):
@@ -45,6 +46,7 @@ def dataset_to_pandas(dataset):
     Returns:
         df: Pandas DataFrame.
     """
+    logger.debug('Converting ParquetDataset to Pandas DataFrame.')
     return dataset.read().to_pandas()
 
 def deduplicate_pandas(df, subset: Hashable=None):
@@ -55,6 +57,7 @@ def deduplicate_pandas(df, subset: Hashable=None):
     Returns:
         df: Deduplicated copy of the original dataframe.
     """
+    logger.debug('Deduplicating dataframe.')
     return df.drop_duplicates(subset=subset)
 
 def remove_empty_rows_pandas(df, cols: List[str], pat: str=r'\b\w{2,}'):
@@ -76,6 +79,7 @@ def remove_empty_rows_pandas(df, cols: List[str], pat: str=r'\b\w{2,}'):
             .apply(lambda col: col.str.findall(pat)) # Tokenize all rows; returns list of tokens
             .apply(lambda row: row.all(), axis=1) # Ensure both columns contain non-empty list of tokens
             )
+    logger.debug('Removing empty rows from dataframe.')
     return out_df[mask]
 
 def remove_low_score_pandas(df, threshold: int):
@@ -88,6 +92,7 @@ def remove_low_score_pandas(df, threshold: int):
         df: Copy of original dataframe with low score records removed.
     """
     out_df = df.copy()
+    logger.debug('Removing low score records from dataframe.')
     return out_df.loc[out_df.score >= threshold]
 
 def replace_text_pandas(df, cols: List[str], pat: str, repl: str):
@@ -104,6 +109,7 @@ def replace_text_pandas(df, cols: List[str], pat: str, repl: str):
         df: Copy of original dataframe with replaced or padded string.
     """
     out_df = df.copy()
+    logger.debug('Replacing text in columns: %s with pattern: %s, and replacement: %s', ', '.join(cols), pat, repl)
     out_df.loc[:, cols] = (out_df.loc[:, cols]
                            .apply(lambda col: col.str.replace(pat, repl, regex=True))
                            )
@@ -122,6 +128,7 @@ def replace_url_pandas(df, cols: List[str], pat: str=r'[\[\(]?https?://[\S]+[\]\
     Returns:
         df: Copy of original dataframe with padded URLs.
     """
+    logger.debug('Padding URLs in columns: %s from dataframe.', ', '.join(cols))
     return replace_text_pandas(df, cols, pat, repl)
 
 def remove_extra_whitespace_pandas(df, cols: List[str]):
@@ -137,6 +144,7 @@ def remove_extra_whitespace_pandas(df, cols: List[str]):
         df: Copy of original dataframe with extra whitespaces removed.
     """
     # Only replace contiguous whitespaces with single space.
+    logger.debug('Removing extra whitespaces in columns: %s.', ', '.join(cols))
     return replace_text_pandas(df, cols, pat=r'\s{2,}', repl=' ')
 
 def lowercase_text_pandas(df, cols: list[str]):
@@ -151,12 +159,13 @@ def lowercase_text_pandas(df, cols: list[str]):
         df: Copy of original dataframe with text records in lowercase.
     """
     out_df = df.copy()
+    logger.debug('Lowercasing text in columns: %s', ', '.join(cols))
     out_df.loc[:, cols] = (out_df.loc[:, cols]
                            .apply(lambda col: col.str.lower())
                            )
     return out_df
 
-def assign_record_type_pandas(df, record_type):
+def assign_record_type_pandas(df, record_type: Literal['submission', 'comment']):
     """
     Assigns a new column to the current dataframe containing the data source
     from the pyarrow schema metadata. Useful for filtering records downstream.
@@ -168,7 +177,7 @@ def assign_record_type_pandas(df, record_type):
     Returns:
         df: Copy of original dataframe with assigned record_type column.
     """
-    logger.debug('Assigning record_type column for %s', record_type)
+    logger.debug('Assigning "record_type" column for %s dataframe.', record_type)
     return df.assign(record_type=record_type)
 
 def drop_and_rename_text_cols(df):
@@ -207,33 +216,31 @@ def wrangle_dataset(dataset):
     record_type = dataset.schema.metadata[b'record_type'].decode()
     subset = 'submission_id' if record_type == 'submission' else 'comment_id'
     cols = ['title', 'selftext'] if record_type == 'submission' else ['body']
+    logger.info('Parsing raw %s dataset.', record_type) 
     
     # Convert dataset to pandas for in-memory transformations
-    logger.debug('Converting ParquetDataset to Pandas DataFrame.')
     out_df = dataset_to_pandas(dataset)
 
     # Deduplication based on column subset
-    logger.debug('Deduplicating %s dataframe.', record_type)
     out_df = deduplicate_pandas(out_df, subset)
 
     # Remove empty records (records without valid tokens)
-    logger.debug('Removing empty rows from %s dataframe.', record_type)
     out_df = remove_empty_rows_pandas(out_df, cols)
     
     # Filter unreliable / low-score comments and posts
-    logger.debug('Removing low score records from %s dataframe.', record_type)
     out_df = remove_low_score_pandas(out_df, threshold=-2)
     
     # Pad URLs with context tags <URL>
-    logger.debug('Padding URLs in %s from %s dataframe.', ', '.join(cols), record_type)
     out_df = replace_url_pandas(out_df, cols)
     
     # Remove extra whitespaces
-    logger.debug('Removing extra whitespaces from %s dataframe.', record_type)
     out_df = remove_extra_whitespace_pandas(out_df, cols)
     
     # Retain only 'document' column for all text data
     out_df = drop_and_rename_text_cols(out_df)
+    
+    # Assign record type
+    out_df = assign_record_type_pandas(out_df, record_type)
     
     logger.info('Finished preprocessing %s dataset.', record_type) 
     return out_df
