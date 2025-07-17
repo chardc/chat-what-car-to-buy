@@ -1,9 +1,12 @@
 import os
-from typing import Literal, Iterable
+import logging
 import pandas as pd
 import numpy as np
+from typing import Literal, Iterable
 from chatwhatcartobuy.utils.getpath import get_repo_root
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+
+logger = logging.getLogger(__name__)
 
 def build_embedding_model(
     model_name: str='sentence-transformers/all-MiniLM-L6-v2',
@@ -35,9 +38,15 @@ def build_embedding_model(
         /embeddings/huggingface.html
     """
     if multi_process:
+        logger.debug('Multi-processing enabled.')
         # Disable warning for multiprocess encoding
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
     
+    logger.info(
+        'Initializing HuggingFaceEmbeddings\nmodel_name: %s\ndevice: %s\nbatch_size: %d'
+        '\nnormalize_embeddings: %s\nmulti_process: %s\nshow_progress: %s\nkwargs: %r',
+        model_name, device, batch_size, normalize_embeddings, multi_process, show_progress, kwargs
+        )
     return HuggingFaceEmbeddings(
         **kwargs,
         model_name=model_name,
@@ -60,6 +69,7 @@ def normalize_embeddings(emb, to_list: bool=False):
     Returns:
         normalized_emb: Normalized embeddings. Either 2D array or List of lists.
     """
+    logger.info('Normalizing embeddings. Return to list: %s', to_list)
     # Convert to 2D array to compute row-wise norms
     if isinstance(emb, pd.Series):
         unnormalized_emb = np.stack(emb)
@@ -69,6 +79,7 @@ def normalize_embeddings(emb, to_list: bool=False):
     norms = np.linalg.norm(unnormalized_emb, axis=1, keepdims=True)
     
     if to_list:
+        logger.debug('Returning normalized embeddings in list format.')
         return (unnormalized_emb / norms).to_list() if norms != 0 else unnormalized_emb.to_list()
     
     return (unnormalized_emb / norms) if norms != 0 else unnormalized_emb
