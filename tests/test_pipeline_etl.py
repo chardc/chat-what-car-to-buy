@@ -173,17 +173,15 @@ def fake_transform(table):
     return out_table
 
 # Remove log file creation
-@patch('chatwhatcartobuy.pipeline.etl.setup_logging')
 @patch('chatwhatcartobuy.pipeline.etl.DataTransformer')
 @patch('chatwhatcartobuy.pipeline.etl.txt_to_list')
 @patch('chatwhatcartobuy.pipeline.streamer.RateLimiter')
 @patch('chatwhatcartobuy.pipeline.etl.get_parquet_configs')
-@patch('chatwhatcartobuy.pipeline.etl.load_env')
 @patch('chatwhatcartobuy.pipeline.etl.Reddit')
 def test_main(
-    mock_reddit, stub_load_env, stub_parquet_cfg, 
+    mock_reddit, stub_parquet_cfg, 
     fake_ratelimiter, stub_txt_to_list, 
-    mock_transformer, stub_setup_logging, tmp_path_factory
+    mock_transformer, tmp_path_factory
     ):
     """Integration test for the ETL pipeline script."""
     # Patch dependencies
@@ -194,8 +192,6 @@ def test_main(
     stub_subreddit_search = StubSubredditSearch()
     mock_subreddit.search.side_effect = lambda *args, **kwargs: stub_subreddit_search()
     mock_reddit.return_value.subreddit.return_value = mock_subreddit
-    ## Patches subreddit.search to return fixed list of submissions per call
-    stub_load_env.return_value = (None, None, None, None, None)
     ## Ensure parquet files are written to temp directory; otherwise, default args
     temp_root = tmp_path_factory.mktemp('test_etl')
     stub_parquet_cfg.return_value = get_parquet_configs(root=temp_root)

@@ -2,14 +2,23 @@
 
 import logging
 from praw import Reddit
+from dotenv import load_dotenv
 from chatwhatcartobuy.pipeline.streamer import DataStreamer
 from chatwhatcartobuy.pipeline.transformer import DataTransformer
 from chatwhatcartobuy.pipeline.loader import ParquetDataLoader
 from chatwhatcartobuy.config.parquet_config import get_parquet_configs
 from chatwhatcartobuy.config.logging_config import setup_logging
 from chatwhatcartobuy.utils.txtparser import txt_to_list
-from chatwhatcartobuy.utils.loadenv import load_env
 from chatwhatcartobuy.utils.getpath import get_path
+
+logger = logging.getLogger(__name__)
+
+def load_api_keys():
+    """Load API keys from .env file in config directory."""
+    env_path = get_path(__file__, '.env', 'config')
+    logger.debug('.env loaded from %s', str(env_path))
+    load_dotenv(env_path)
+    logger.debug('PRAW API keys successfully loaded.')
 
 def main(**stream_kwargs):
     """
@@ -30,8 +39,9 @@ def main(**stream_kwargs):
     # Setup logger with file handler
     setup_logging(level=logging.INFO, file_prefix='etl-pipeline', output_to_file=True)
     
-    # Run config scripts; generate loader config 
-    PRAW_ID, PRAW_SECRET, PRAW_PASSWORD, PRAW_USER_AGENT, PRAW_USERNAME = load_env()
+    load_api_keys()
+    
+    from chatwhatcartobuy.config.reddit_api_config import PRAW_ID, PRAW_SECRET, PRAW_USER_AGENT, PRAW_USERNAME, PRAW_PASSWORD
     
     # Try getting schema from schemas.json in config dir, otherwise, return default.
     # Save the data to root/data/raw/**-dataset
