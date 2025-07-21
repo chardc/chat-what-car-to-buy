@@ -169,11 +169,11 @@ def test_wrangle_dataset(
 
 @patch('chatwhatcartobuy.utils.wrangling.dt')
 @patch('chatwhatcartobuy.utils.wrangling.get_repo_root')
-def test_pandas_to_parquet(mock_root, mock_dt, stub_dataframe, monkeypatch):
+def test_pandas_to_parquet(mock_root, mock_dt, stub_dataframe, monkeypatch, tmp_path):
     mock_dt.datetime.now.return_value = dt.datetime(2000,1,1) # Y-m-d == 2000-01-01
     mock_write = MagicMock()
     monkeypatch.setattr(type(stub_dataframe), 'to_parquet', mock_write)
-    mock_root.return_value = Path('repo_root')
+    mock_root.return_value = tmp_path
     
     # Test if .parquet is appended and if current date partitioning works
     wrangling.pandas_to_parquet(stub_dataframe, 'sample', partition_by_date=True)
