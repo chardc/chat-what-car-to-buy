@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from chatwhatcartobuy.rag.vector_db import build_vector_db, load_vector_db
+from langchain_chroma import Chroma
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,7 @@ class Retriever:
     def retrieve(self, query: str):
         """Retrieve reddit posts and comments relevant to query."""
         if not self._vector_store:
-            raise RuntimeError(f'Vector store has not been initialized. Build a vector store by calling '
-                               f'build_vector_db or load an existing one using load_vector_db.')
+            raise RuntimeError(f'Vector store has not been initialized. Load a vector store by calling load_vector_store (ChromaDB).')
         # Retrieve relevant context documents first        
         submission_docs = self._vector_store.similarity_search(
             query, k=self.submission_k, filter={'record_type': 'submission'}
@@ -66,24 +66,17 @@ class Retriever:
         logger.debug('Retrieved a total of %d documents.', len(context))
         return '\n\n'.join(context)
     
-    def build_vector_db(self, collection_name: str, persist_directory: str | Path, **kwargs):
-        """Build a Chroma vector db and save to local directory."""        
-        self._vector_store = build_vector_db(
-            **kwargs, 
-            embeddings=self.embeddings, 
-            collection_name=collection_name, 
+    def load_vector_store(self, collection_name: str, persist_directory: str | Path, **kwargs):
+        """Load a ChromaDB client."""
+        if isinstance(persist_directory, Path):
+            persist_directory = str(persist_directory)
+        logging.debug('Loading ChromaDB client with args: collection_name=%s, embedding_function=%r, persist_directory=%s', collection_name, self.embeddings, persist_directory)
+        self._vector_store = Chroma(
+            **kwargs,
+            collection_name=collection_name,
+            embedding_function=self.embeddings,
             persist_directory=persist_directory
-            )
-        return self
-    
-    def load_vector_db(self, collection_name: str, persist_directory: str | Path, **kwargs):
-        """Load a Chroma vector db from local directory."""
-        self._vector_store = load_vector_db(
-            **kwargs, 
-            embeddings=self.embeddings, 
-            collection_name=collection_name, 
-            persist_directory=persist_directory
-            )
+        )
         return self
     
     def add_documents(self, docs: list, ids: list=None, **kwargs):
