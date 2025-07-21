@@ -8,20 +8,23 @@ from chatwhatcartobuy.rag.retriever import Retriever
 logger = logging.getLogger(__name__)
 
 class ChatBot:
-    INSTRUCTIONS = """
-    You are a knowledgeable and objective assistant specialized in providing detailed advice to prospective 
-    buyers of secondhand cars. You leverage insights drawn from genuine discussions and real-life experiences 
-    shared by users on Reddit, supplemented by authoritative automotive sources.
+    INSTRUCTIONS = (
+"""
+You are a friendly, knowledgeable, and humanistic assistant specialized in providing detailed advice to prospective 
+buyers of secondhand cars. You leverage insights drawn from genuine discussions and real-life experiences 
+shared by users on Reddit, supplemented by authoritative automotive sources.
 
-    When responding to user queries, carefully adhere to the following guidelines:
-    1. Prioritize evidence-based insights drawn from relevant Reddit discussions, clearly referencing user experiences.
-    2. Provide objective, balanced, and actionable information, highlighting both pros and cons.
-    3. Clarify common issues, reliability factors, potential repair costs, and maintenance advice.
-    4. Keep the responses concise yet thorough, structured logically with bullet points or numbered lists where beneficial.
+When responding to user queries, carefully adhere to the following guidelines:
+1. Prioritize evidence-based insights drawn from relevant Reddit discussions, clearly referencing user experiences.
+2. Provide objective, balanced, and actionable information, highlighting both pros and cons.
+3. Clarify common issues, reliability factors, potential repair costs, and maintenance advice.
+4. Keep the responses thorough and structured logically with bullet points or numbered lists where beneficial.
+5. Present a conclusion, summary, or synthesis at the end of your response to help guide the user.
     
-    Below are relevant Reddit discussions to inform your answer. Review them carefully to ensure the advice provided is 
-    specific, relevant, and actionable.
-    """
+Below are relevant Reddit discussions to inform your answer. Review them carefully to ensure the advice provided is 
+specific, relevant, and actionable.
+"""
+)
     
     def __init__(self, retriever: Retriever, model: str='gemini-2.5-flash', is_thinking: bool=False):
         # client requires GEMINI_API_KEY env variable; Load .env file at the start of application.
@@ -47,26 +50,21 @@ class ChatBot:
         if not isinstance(value, int): 
             raise TypeError('Value must be an integer from -1 to 24576/32768.')
         self.thinking_budget = value
+        
+    def add_instructions(self, instructions: str):
+        self.INSTRUCTIONS += f"\n\nADDITIONAL INSTRUCTIONS: {instructions}"
     
     def query(self, user_query: str):
         rag_context = self.retriever.retrieve(user_query)
         logging.debug('Retrieved context from database. Approx %d tokens.', len(rag_context)//4)
-        prompt = (
-            f"""
-            {self.INSTRUCTIONS}
-            
-            ### Relevant Reddit discussions
-            {rag_context}
-            
-            ### User Query:
-            {user_query}
-            
-            ### Chatbot Response:
-            """
-            )
+        prompt = (f"{self.INSTRUCTIONS}\n\n"
+                  f"### Relevant Reddit discussions\n{rag_context}\n\n"
+                  f"### User Query\n{user_query}\n\n"
+                  f"### Chatbot Response\n"
+                  )
         logging.debug('Prompt constructed. Approx. %d tokens.', len(prompt)//4)
         response = self.client.models.generate_content(
-            self.model, 
+            model=self.model, 
             contents=prompt,
             config=types.GenerateContentConfig(
                 # Allow model to think; improves answer quality
