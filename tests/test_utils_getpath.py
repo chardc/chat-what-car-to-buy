@@ -1,5 +1,8 @@
 import pytest
+import os
+import time
 from pathlib import Path
+from chatwhatcartobuy.utils import getpath
 from chatwhatcartobuy.utils.getpath import get_path, get_repo_root
 
 @pytest.fixture
@@ -69,3 +72,37 @@ def test_no_root_raised():
     with pytest.raises(RuntimeError):
         # Fake path; naturally, no sentinel will be found
         get_repo_root('/fakeroot/fakemodule/fakesubmodule/fake_main.py')
+        
+@pytest.fixture
+def create_test_files(tmp_path):
+    # Make three files with a slight time difference
+    files = []
+    for i, name in enumerate(['file1.txt', 'file2.txt', 'file3.txt']):
+        f = tmp_path / name
+        f.write_text(f"content {i}")
+        files.append(f)
+        # Make sure files have different mtimes
+        time.sleep(0.001)
+    # Set mtimes manually to guarantee ordering
+    now = time.time()
+    for i, f in enumerate(files):
+        f.touch()
+        f.write_text(f"content {i}")  # update content for fun
+        mtime = now + i
+        os.utime(f, (mtime, mtime))
+    return files
+
+def test_get_latest_path(create_test_files, monkeypatch, tmp_path):
+    files = create_test_files
+    # Patch get_repo_root to return tmp_path
+    monkeypatch.setattr(getpath, "get_repo_root", lambda: tmp_path)
+    # Should return the file with the highest mtime (last one)
+    latest = getpath.get_latest_path("file*.txt")
+    assert latest == files[-1]
+
+def test_get_earliest_path(create_test_files, monkeypatch, tmp_path):
+    files = create_test_files
+    monkeypatch.setattr(getpath, "get_repo_root", lambda: tmp_path)
+    # Should return the file with the lowest mtime (first one)
+    earliest = getpath.get_earliest_path("file*.txt")
+    assert earliest == files[0]
