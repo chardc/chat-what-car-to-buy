@@ -3,7 +3,6 @@ import logging
 import pandas as pd
 import numpy as np
 from typing import Literal, Iterable
-from chatwhatcartobuy.utils.getpath import get_repo_root
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ def build_embedding_model(
         # Disable warning for multiprocess encoding
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
     
-    logger.info(
+    logger.debug(
         'Initializing HuggingFaceEmbeddings\nmodel_name: %s\ndevice: %s\nbatch_size: %d'
         '\nnormalize_embeddings: %s\nmulti_process: %s\nshow_progress: %s\nkwargs: %r',
         model_name, device, batch_size, normalize_embeddings, multi_process, show_progress, kwargs
