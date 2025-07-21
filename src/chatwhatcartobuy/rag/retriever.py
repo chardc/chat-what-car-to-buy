@@ -15,6 +15,7 @@ class Retriever:
         self.submission_k = submission_k
         self.comment_n = comment_n
         self.embeddings = embeddings
+        self._vector_store = None
     
     def set_k(self, submission_k: int=None, comment_n: int=None):
         """Modify the k-number of returned documents."""
@@ -35,6 +36,9 @@ class Retriever:
     
     def retrieve(self, query: str):
         """Retrieve reddit posts and comments relevant to query."""
+        if not self._vector_store:
+            raise RuntimeError(f'Vector store has not been initialized. Build a vector store by calling '
+                               f'build_vector_db or load an existing one using load_vector_db.')
         # Retrieve relevant context documents first        
         submission_docs = self._vector_store.similarity_search(
             query, k=self.submission_k, filter={'record_type': 'submission'}
@@ -45,7 +49,7 @@ class Retriever:
         # Output format: source 1: <text> comment 1: <text> comment 2: <text> source n: <text> comment n: <text>...
         context = []
         for k, submission_doc in enumerate(submission_docs):
-            context.append(f'source {k}:\n{submission_doc.page_content}')
+            context.append(f'SOURCE {k}:\n{submission_doc.page_content}')
             submission_id = submission_doc.metadata['submission_id']
             # MongoDB query language; Get comments from current submission id
             comment_docs = self._vector_store.similarity_search(
@@ -57,7 +61,7 @@ class Retriever:
                     ]}
                 )
             logger.debug('Retrieved %d relevant documents from comments for submission id: %s.', len(comment_docs), submission_id)
-            context.extend([f'comment {n}:\n{doc.page_content}' for n, doc in enumerate(comment_docs)])
+            context.extend([f'COMMENT {n}:\n{doc.page_content}' for n, doc in enumerate(comment_docs)])
         
         logger.debug('Retrieved a total of %d documents.', len(context))
         return '\n\n'.join(context)
@@ -84,9 +88,14 @@ class Retriever:
     
     def add_documents(self, docs: list, ids: list=None, **kwargs):
         """Add documents to ChromaDB collection."""
-        for i, (batch_docs, batch_ids) in enumerate(zip(self._split_to_batches(docs), self._split_to_batches(ids))):
-            logger.debug('Adding documents to vector database (Batch %d).', i)
-            self._vector_store.add_documents(batch_docs, ids=batch_ids, **kwargs)
+        if docs and ids:
+            for i, (batch_docs, batch_ids) in enumerate(zip(self._split_to_batches(docs), self._split_to_batches(ids))):
+                logger.debug('Adding documents to vector database (Batch %d).', i)
+                self._vector_store.add_documents(batch_docs, ids=batch_ids, **kwargs)
+        else:
+            for i, batch_docs in enumerate(self._split_to_batches(docs)):
+                logger.debug('Adding documents to vector database (Batch %d).', i)
+                self._vector_store.add_documents(batch_docs, **kwargs)
         return self
     
     @staticmethod
