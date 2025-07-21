@@ -5,7 +5,12 @@
 **/__pycache__
 
 # All logs
+logs/
 **/*.log
+
+# All datasets
+raw/
+processed/
 
 # All scratch / sandbox notebooks and scripts
 **/*scratch.*
