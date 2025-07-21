@@ -173,6 +173,7 @@ def fake_transform(table):
     return out_table
 
 # Remove log file creation
+@patch('chatwhatcartobuy.pipeline.etl.setup_logging')
 @patch('chatwhatcartobuy.pipeline.etl.DataTransformer')
 @patch('chatwhatcartobuy.pipeline.etl.txt_to_list')
 @patch('chatwhatcartobuy.pipeline.streamer.RateLimiter')
@@ -181,7 +182,7 @@ def fake_transform(table):
 def test_main(
     mock_reddit, stub_parquet_cfg, 
     fake_ratelimiter, stub_txt_to_list, 
-    mock_transformer, tmp_path_factory
+    mock_transformer, mock_logging, tmp_path_factory
     ):
     """Integration test for the ETL pipeline script."""
     # Patch dependencies
