@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # RAG Chatbot for Used Car Inquiries and Recommendations
-=======
-# Used Car Analysis from Reddit Discussions (Ongoing Project)
->>>>>>> c67ab1e6957f3e420f3ef0af53d07e62ce97699a
 
 This project is a Retrieval-Augmented Generation (RAG) AI chatbot designed to assist users in purchasing secondhand cars. Leveraging a Large Language Model (LLM) and enhanced by real-time retrieval from a curated dataset of used car discussions and user reviews from Reddit, this chatbot provides contextually-relevant answers based on real and lived experiences. 
 
@@ -25,6 +21,7 @@ __Motivation:__ As a first-time car buyer, it's easy to get lost in the sea of o
 In the case of used cars, if a significant number of people praise a specific Japanese-manufactured vehicle model while citing its faults, an algorithm that sufficiently captures this data may be able to present a high confidence level for the said model while presenting an overview of common issues to be aware of. In doing so, the work involved in research is cut in half, and prospective buyers can trim their options down to a few models that fit their criteria, while being made aware of the salient points that require extensive due diligence (e.g. common issues, upkeep, regulations) that only humans can do.
 
 ## How to run this program:
+<<<<<<< HEAD
 1. Configure your the .env file under the config directory with your client id and client secret keys from Reddit API. Also include your username, password, and agent in the .env file.
 <<<<<<< HEAD
 2. Run the etl.py script to extract data from Reddit and update the datasets in the data directory. Otherwise, you can skip this step and utilize the pre-scraped data under the data directory.
@@ -39,3 +36,9 @@ In the case of used cars, if a significant number of people praise a specific Ja
 2. Recommender with text summarization for user-prompted queries (Ex. What's the best used sedan under $10,000)
 3. UI for user prompting and displaying results
 >>>>>>> c67ab1e6957f3e420f3ef0af53d07e62ce97699a
+=======
+1. Configure the .env.template file under the config directory with your client id and client secret keys from Reddit API and chosen LLM keys. Rename to .env after populating the fields.
+2. Run the etl.py script to extract data from Reddit and update the datasets in the data directory. Otherwise, you can skip this step and utilize the pre-scraped data under the data directory.
+3. Run the app.py script to access the CLI chatbot. It will prompt you to build a new vector store when executed. This will create a persistent ChromaDB collection inside the project root containing the most recent documents from the local parquet files. In subsequent re-runs of the app, you can skip building the vector store for faster startup.
+4. Prompt the chatbot with your car purchasing inquiries.
+>>>>>>> feature/containerization
