@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # RAG Chatbot for Used Car Inquiries and Recommendations
+=======
+# Used Car Analysis from Reddit Discussions (Ongoing Project)
+>>>>>>> c67ab1e6957f3e420f3ef0af53d07e62ce97699a
 
 This project is a Retrieval-Augmented Generation (RAG) AI chatbot designed to assist users in purchasing secondhand cars. Leveraging a Large Language Model (LLM) and enhanced by real-time retrieval from a curated dataset of used car discussions and user reviews from Reddit, this chatbot provides contextually-relevant answers based on real and lived experiences. 
 
@@ -22,5 +26,16 @@ In the case of used cars, if a significant number of people praise a specific Ja
 
 ## How to run this program:
 1. Configure your the .env file under the config directory with your client id and client secret keys from Reddit API. Also include your username, password, and agent in the .env file.
+<<<<<<< HEAD
 2. Run the etl.py script to extract data from Reddit and update the datasets in the data directory. Otherwise, you can skip this step and utilize the pre-scraped data under the data directory.
 3. __TO BE CONTINUED__
+=======
+2. [OPTIONAL] Run the pipeline.py script to extract data from Reddit and update the datasets in the data directory. Otherwise, you can skip this step and utilize the pre-scraped data under the data directory.
+3. [OPTIONAL] Check the notebooks to understand what each script does and the documentation for each function.
+4. __TO BE CONTINUED__
+
+## To be implemented:
+1. Analysis on scraped text data
+2. Recommender with text summarization for user-prompted queries (Ex. What's the best used sedan under $10,000)
+3. UI for user prompting and displaying results
+>>>>>>> c67ab1e6957f3e420f3ef0af53d07e62ce97699a
