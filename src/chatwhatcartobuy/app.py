@@ -78,13 +78,16 @@ def chat_loop(chatbot: ChatBot, exit_kwords = ['exit', 'quit', 'terminate']):
         user_query = ask_user_input()
         if user_query.strip() in exit_kwords:
             break
+        # Only retrieve context from 
         if turn == 0:
             context = chatbot.retrieve_context(user_query)
             user_query += f'\n\n{context}'
         console.print("\n[yellow]Chatbot is thinking...[/yellow]\n")
         print_response(console, chatbot.chat(user_query))
         console.print(f"[dim]Type {'/'.join(exit_kwords)} to leave the app.[/dim]\n")
+        turn += 1
     console.print("\n\n[red]Exiting the app...[/red]\n")
+    logger.debug('Conversation exited. Total turns: %d', turn + 1)
 
 def main(build_new_vector_store: bool=None):
     if build_new_vector_store:
@@ -115,6 +118,6 @@ if __name__ == '__main__':
     except Exception as e:
         logger.critical('Exception occured: %s', e)
         raise e
-    
+
 # Sample prompt
 # Chat, I want to buy a reliable, affordable, and sporty sedan or hatchback under $15K aud. I'm looking at Mazda 3 but also considering other japanese manufactured models. Can you recommend me any models that are at most 15 years old, and can you present me with a comprehensive pros and cons of each model. Try to limit your recommendations to the top 2 models that you think best fits my budget and profile as a student with limited income.
