@@ -1,0 +1,7 @@
+Welcome to 'Chat, what car to buy?', an AI Chatbot that helps you decide on the best used car for you.
+
+Chat is powered by Gemini 2.5 Flash, a lightweight LLM that combines general knowledge with real crowd wisdom from Reddit. You'll get recommendations and warnings based on lived experiences from real car owners.
+
+Type your question (e.g. "Best used SUV under $10k?" or "What are common problems for a 2012 Civic?") and let Chat handle the research.
+
+Type 'exit' at any time to leave the app.

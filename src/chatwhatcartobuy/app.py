@@ -13,6 +13,7 @@ from chatwhatcartobuy.rag.retriever import Retriever
 from chatwhatcartobuy.llm.chatbot import ChatBot
 from chatwhatcartobuy.config.logging_config import setup_logging
 from chatwhatcartobuy.utils.getpath import get_path, get_repo_root, get_latest_path
+from chatwhatcartobuy.utils.txtparser import read_txt_file
 
 logger = logging.getLogger(__name__)
 
@@ -46,55 +47,9 @@ def build_retriever():
         .add_documents(comment_docs, ids=comment_ids)
         )
 
-def build_chatbot(**kwargs):
-    return ChatBot(
-        **kwargs, 
-        retriever=build_retriever(), 
-        model='gemini-2.5-flash', 
-        is_thinking=True
-        )
+INTRO = read_txt_file(get_path(start_path=__file__, target='cli_app_intro.txt', subdir='chatwhatcartobuy'))
 
-INTRO = """
-Welcome to 'Chat, what car to buy?', an AI Chatbot that helps you decide on the best used car for you.
-
-Chat is powered by Gemini 2.5 Flash, a lightweight LLM that combines general knowledge with real crowd wisdom from Reddit. You'll get recommendations and warnings based on lived experiences from real car owners.
-
-Type your question (e.g. "Best used SUV under $10k?" or "What are common problems for a 2012 Civic?") and let Chat handle the research.
-
-Type 'exit' at any time to leave the app.
-"""
-
-ADDTL_INSTRUCTIONS = """
-Please format your response so it is clear, visually organized, and easy to read in a plain-text terminal (CLI) environment.
-Do NOT use Markdown formatting (no # headers, no **bold**, no *italic*, no tables, no backticks).
-Instead:
-- Use all-caps or underlines for section headings (e.g., MODEL SUMMARY or ==== MODEL SUMMARY ====)
-- Use regular hyphens or asterisks for bullet points (- Pro: ...)
-- Separate sections with whitespace or plain dividers (like -----)
-- Do not use color codes or other markup.
-
-EXAMPLE FORMATTING:
-
-TOP 2 RECOMMENDATIONS
-
-1. MAZDA 3 (2014-2018)
-
-Pros:
-- Reliable according to most owners ("Nothing has broken in 105k miles", Source 1)
-- Sporty driving feel
-...
-
------------------------------------------------------
-
-2. TOYOTA COROLLA (2008-2019)
-
-Pros:
-- Legendary reliability
-...
-"""
-
-def print_intro():
-    console = Console()
+def print_intro(console):
     console.print(
         Panel(
             INTRO.strip(), 
@@ -103,24 +58,32 @@ def print_intro():
             border_style="blue")
         )
 
-def chat_loop(chatbot, exit_kwords = ['exit', 'quit', 'terminate']):
-    console = Console()
-    print_intro() 
-    while True:
-        user_query = Prompt.ask("[bold green]You[/bold green]", default="", show_default=False)
-        if user_query.strip().lower() in exit_kwords:
-            break
-        time.sleep(0.1)
-        console.print("\n[yellow]Chatbot is thinking...[/yellow]\n")
-        answer = chatbot.query(user_query)
-        console.print(
+def ask_user_input():
+    return Prompt.ask("[bold green]You[/bold green]", default="", show_default=False).lower()
+
+def print_response(console, answer):
+    console.print(
             Panel.fit(
                 Text(answer, style="white"), 
                 title="[bold blue]Chatbot[/bold blue]", 
-                border_style="blue")
-            )
+                border_style="blue"
+                ))
+
+def chat_loop(chatbot: ChatBot, exit_kwords = ['exit', 'quit', 'terminate']):
+    console = Console()
+    print_intro(console)
+    # chatbot.begin_session(ask_user_input())
+    turn = 0
+    while True:
+        user_query = ask_user_input()
+        if user_query.strip() in exit_kwords:
+            break
+        if turn == 0:
+            context = chatbot.retrieve_context(user_query)
+            user_query += f'\n\n{context}'
+        console.print("\n[yellow]Chatbot is thinking...[/yellow]\n")
+        print_response(console, chatbot.chat(user_query))
         console.print(f"[dim]Type {'/'.join(exit_kwords)} to leave the app.[/dim]\n")
-    time.sleep(0.1)
     console.print("\n\n[red]Exiting the app...[/red]\n")
 
 def main(build_new_vector_store: bool=None):
@@ -128,26 +91,30 @@ def main(build_new_vector_store: bool=None):
         prepare_document_files()
         retriever = build_retriever()
     else:
-        retriever = Retriever(submission_k=10, comment_n=20, embeddings=build_embeddings())
+        retriever = Retriever(submission_k=15, comment_n=30, embeddings=build_embeddings())
         retriever.load_vector_store(collection_name='reddit-data', persist_directory=get_repo_root()/'chroma')
     chatbot = ChatBot(retriever)
     # Instructions for LLM to avoid markdown and rich formatting and focus on CLI-appropriate formatting
-    chatbot.add_instructions(ADDTL_INSTRUCTIONS)
     chat_loop(chatbot)
 
+def prompt_yes_no():
+    while True:
+        choice = input('[SETUP] Build a new vector store? (Y/N): ').lower().strip()
+        if choice in ['y', 'n']:                
+            return True if choice == 'y' else False
+        print('Invalid input. Try again. (Y/N)')
+
 if __name__ == '__main__':
-    setup_logging(level=logging.DEBUG, file_prefix='chatbot-cli-app', output_to_file=True)
     try:
+        setup_logging(level=logging.DEBUG, file_prefix='chatbot-cli-app', output_to_file=True)
         load_dotenv(get_path(start_path=__file__, target='.env', subdir='config'))
         # Building a new vector store every time increases latency due to additional processes
         # Also, a new vector store can only be built when chroma/ directory is deleted
         # Otherwise, we risk appending duplicate documents to the vector db--rendering retriever useless
-        while True:
-            setup = input('[SETUP] Build a new vector store? (Y/N): ').lower()
-            if setup in ['y', 'n']:
-                print('\n')
-                main(build_new_vector_store=True) if setup == 'y' else main()
-                break
+        main(build_new_vector_store=prompt_yes_no())
     except Exception as e:
         logger.critical('Exception occured: %s', e)
         raise e
+    
+# Sample prompt
+# Chat, I want to buy a reliable, affordable, and sporty sedan or hatchback under $15K aud. I'm looking at Mazda 3 but also considering other japanese manufactured models. Can you recommend me any models that are at most 15 years old, and can you present me with a comprehensive pros and cons of each model. Try to limit your recommendations to the top 2 models that you think best fits my budget and profile as a student with limited income.
