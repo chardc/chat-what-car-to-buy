@@ -47,7 +47,9 @@ class Retriever:
         
         # For each relevant context, retrieve n relevant comments
         # Output format: source 1: <text> comment 1: <text> comment 2: <text> source n: <text> comment n: <text>...
-        context = []
+        context = ["INSTRUCTIONS: Below are relevant Reddit discussions to inform your answer. "
+                   "Review them carefully to ensure the advice provided is specific, relevant, and actionable."
+                   ]
         for k, submission_doc in enumerate(submission_docs):
             context.append(f'SOURCE {k}:\n{submission_doc.page_content}')
             submission_id = submission_doc.metadata['submission_id']
@@ -62,6 +64,8 @@ class Retriever:
                 )
             logger.debug('Retrieved %d relevant documents from comments for submission id: %s.', len(comment_docs), submission_id)
             context.extend([f'COMMENT {n}:\n{doc.page_content}' for n, doc in enumerate(comment_docs)])
+        
+        context.append("END OF RETRIEVED DOCUMENTS.")
         
         logger.debug('Retrieved a total of %d documents.', len(context))
         return '\n\n'.join(context)
