@@ -19,3 +19,8 @@ def txt_to_list(target_file: str, subdir: Optional[str]=None):
                     if not (line.startswith('#') or line.startswith("\n"))
                     ]
     return txt_list
+
+def read_txt_file(path):
+    with open(path, 'r') as f:
+        text = f.readlines()
+    return '\n'.join(text)
